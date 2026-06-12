@@ -81,9 +81,19 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
+        if (
+          payload &&
+          typeof payload === 'object' &&
+          'error' in payload &&
+          payload.error === 'word_not_found'
+        ) {
+          setLookupStatus({ word, message: '词表暂未收录' });
+          return;
+        }
+
         setLookupStatus({
           word,
-          message: `lookup 暂未接入（${response.status}）`,
+          message: `lookup 请求未完成（${response.status}）`,
         });
         return;
       }
