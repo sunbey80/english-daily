@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { createBrowserClient } from '@/lib/supabase';
 import type { TodayChapter } from '@/lib/today';
 
 type Token =
@@ -64,6 +65,7 @@ function tokenizeBody(body: string): Token[] {
 
 export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
   const tokens = useMemo(() => tokenizeBody(chapter.body), [chapter.body]);
+  const supabase = useMemo(() => createBrowserClient(), []);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
 
@@ -73,9 +75,15 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
     setLookupStatus({ word, message: '查询中...' });
 
     try {
+      const { data } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'content-type': 'application/json' };
+      if (data.session?.access_token) {
+        headers.authorization = `Bearer ${data.session.access_token}`;
+      }
+
       const response = await fetch('/api/lookup', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers,
         body: JSON.stringify({ word }),
       });
       const payload = await response.json().catch(() => null);

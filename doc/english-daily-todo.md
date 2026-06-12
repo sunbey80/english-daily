@@ -52,7 +52,7 @@
 
 ## 阶段 5 · 登录与冷启动
 
-- [ ] 接 Supabase Auth 登录
+- [x] 接 Supabase Auth 登录
 - [ ] 冷启动：选等级 → 批量写 `user_word`（四级及以下 state=2）
 - [ ] （可选）15 词自测微调边界
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import { createBrowserClient } from '@/lib/supabase';
 import type { NotebookItem } from '@/lib/notebook';
 
 type NotebookResponse =
@@ -19,6 +20,7 @@ type LoadState =
   | { status: 'error'; message: string };
 
 export function NotebookClient() {
+  const supabase = useMemo(() => createBrowserClient(), []);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   useEffect(() => {
@@ -26,7 +28,13 @@ export function NotebookClient() {
 
     async function loadNotebook() {
       try {
-        const response = await fetch('/api/notebook');
+        const { data } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (data.session?.access_token) {
+          headers.authorization = `Bearer ${data.session.access_token}`;
+        }
+
+        const response = await fetch('/api/notebook', { headers });
         const payload = (await response.json().catch(() => null)) as NotebookResponse | null;
 
         if (!active) {
@@ -55,7 +63,7 @@ export function NotebookClient() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [supabase]);
 
   if (state.status === 'loading') {
     return <EmptyPanel text="生词本读取中..." />;
