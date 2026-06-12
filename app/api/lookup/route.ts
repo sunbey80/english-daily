@@ -3,9 +3,9 @@
  * 同时把该词在该用户的 user_word 标记为"学习中/不认识"。
  * TODO: 接 FSRS 后，把这里的 due_at 简化逻辑替换为 rate(again)。
  */
-import type { User } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { getRequestUser } from '@/lib/auth';
 import { lemmatizeText } from '@/lib/lemmatize';
 import { createServiceClient } from '@/lib/supabase';
 
@@ -14,27 +14,6 @@ type LookupWord = {
   lemma: string;
   zh_gloss: string | null;
 };
-
-function getBearerToken(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const match = authHeader?.match(/^Bearer\s+(.+)$/i);
-  return match?.[1] ?? null;
-}
-
-async function getRequestUser(request: NextRequest, token: string | null): Promise<User | null> {
-  if (!token) {
-    return null;
-  }
-
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error) {
-    console.warn('lookup auth skipped', error.message);
-    return null;
-  }
-
-  return data.user;
-}
 
 function buildLookupCandidates(input: string) {
   const rawLower = input.toLowerCase();
@@ -60,8 +39,8 @@ function chooseBestWord(words: LookupWord[], candidates: string[]) {
   return null;
 }
 
-async function markUserWordLearning(user: User | null, wordId: number) {
-  if (!user) {
+async function markUserWordLearning(userId: string | null, wordId: number) {
+  if (!userId) {
     return false;
   }
 
@@ -69,7 +48,7 @@ async function markUserWordLearning(user: User | null, wordId: number) {
   const now = new Date().toISOString();
   const { error } = await supabase.from('user_word').upsert(
     {
-      user_id: user.id,
+      user_id: userId,
       word_id: wordId,
       state: 1,
       last_seen_at: now,
@@ -126,8 +105,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'word_not_found', word, candidates }, { status: 404 });
   }
 
-  const user = await getRequestUser(request, getBearerToken(request));
-  const learned = await markUserWordLearning(user, matchedWord.id);
+  const user = await getRequestUser(request);
+  const learned = await markUserWordLearning(user?.id ?? null, matchedWord.id);
 
   return NextResponse.json({
     word,

@@ -1,13 +1,15 @@
 /**
- * 生词本页（占位骨架）。后续接 /api/notebook 渲染 state=1 的词与出处。
+ * 生词本页。当前通过 /api/notebook 读取学习中的词；
+ * 登录功能接入前，未登录用户会看到空态。
  */
+import { NotebookClient } from '@/app/notebook/NotebookClient';
+
 export default function NotebookPage() {
   return (
     <main style={{ maxWidth: 680, margin: '0 auto', padding: '48px 20px' }}>
-      <h1 style={{ fontSize: 24 }}>生词本</h1>
-      <p style={{ color: '#a8a29e' }}>
-        待接入 <code>/api/notebook</code>：展示学习中的词及其出处章节。
-      </p>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>生词本</h1>
+      <p style={{ color: '#78716c', marginTop: 0 }}>你点过的生词会在这里继续复现。</p>
+      <NotebookClient />
     </main>
   );
 }

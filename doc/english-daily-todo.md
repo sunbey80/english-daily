@@ -48,7 +48,7 @@
 - [x] `/api/today` 返回当日章节（个性化优先，无则通用版）
 - [x] 阅读页渲染正文 + 按词分词高亮
 - [x] 点词交互 → 调 `/api/lookup`（查 zh_gloss + 标记 user_word）
-- [ ] 生词本页接 `/api/notebook`
+- [x] 生词本页接 `/api/notebook`
 
 ## 阶段 5 · 登录与冷启动
 
