@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# env —— 密钥绝不进 git
+.env
+.env.local
+.env*.local
+
+# cloudflare
+.wrangler/
+.dev.vars
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+*.tsbuildinfo

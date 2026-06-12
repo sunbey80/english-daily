@@ -1,0 +1,30 @@
+{
+  "name": "english-daily",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "build:cet4": "tsx scripts/build-cet4.ts",
+    "import:cet4": "tsx --env-file=.env.local scripts/import-cet4.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^14.2.5",
+    "openai": "^6.42.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "wink-lemmatizer": "^3.0.4",
+    "wink-pos-tagger": "^2.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.3"
+  }
+}
