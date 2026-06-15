@@ -107,9 +107,9 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
       }
 
       const gloss =
-        payload && typeof payload === 'object' && 'zh_gloss' in payload
+        payload && typeof payload === 'object' && 'zh_gloss' in payload && payload.zh_gloss
           ? String(payload.zh_gloss)
-          : '已记录';
+          : '已加入生词本，释义待补充';
       setLookupStatus({ word, message: gloss });
     } catch {
       setLookupStatus({ word, message: 'lookup 请求失败，稍后再试' });

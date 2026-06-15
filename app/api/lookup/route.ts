@@ -6,6 +6,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getRequestUser } from '@/lib/auth';
+import { getFallbackGloss } from '@/lib/lookup-gloss';
 import { lookupCandidates } from '@/lib/lookup-lemma';
 import { createServiceClient } from '@/lib/supabase';
 
@@ -61,6 +62,32 @@ async function markUserWordLearning(userId: string | null, wordId: number) {
   return true;
 }
 
+async function createFallbackWord(candidates: string[]) {
+  const fallback = getFallbackGloss(candidates);
+  if (!fallback) {
+    return null;
+  }
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('word')
+    .upsert(
+      {
+        lemma: fallback.lemma,
+        zh_gloss: fallback.zh_gloss,
+      },
+      { onConflict: 'lemma', ignoreDuplicates: false },
+    )
+    .select('id, lemma, zh_gloss')
+    .single<LookupWord>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 export async function POST(request: NextRequest) {
   let payload: unknown;
   try {
@@ -95,7 +122,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 
-  const matchedWord = chooseBestWord(data ?? [], candidates);
+  let matchedWord = chooseBestWord(data ?? [], candidates);
+  if (!matchedWord) {
+    try {
+      matchedWord = await createFallbackWord(candidates);
+    } catch (createError) {
+      console.error('POST /api/lookup fallback insert failed', createError);
+      return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+    }
+  }
+
   if (!matchedWord) {
     return NextResponse.json({ error: 'word_not_found', word, candidates }, { status: 404 });
   }
