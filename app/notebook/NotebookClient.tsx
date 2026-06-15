@@ -22,18 +22,23 @@ type LoadState =
 export function NotebookClient() {
   const supabase = useMemo(() => createBrowserClient(), []);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const [removingWordId, setRemovingWordId] = useState<number | null>(null);
+
+  async function getAuthHeaders() {
+    const { data } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (data.session?.access_token) {
+      headers.authorization = `Bearer ${data.session.access_token}`;
+    }
+    return headers;
+  }
 
   useEffect(() => {
     let active = true;
 
     async function loadNotebook() {
       try {
-        const { data } = await supabase.auth.getSession();
-        const headers: Record<string, string> = {};
-        if (data.session?.access_token) {
-          headers.authorization = `Bearer ${data.session.access_token}`;
-        }
-
+        const headers = await getAuthHeaders();
         const response = await fetch('/api/notebook', { headers });
         const payload = (await response.json().catch(() => null)) as NotebookResponse | null;
 
@@ -64,6 +69,39 @@ export function NotebookClient() {
       active = false;
     };
   }, [supabase]);
+
+  async function handleRemove(item: NotebookItem) {
+    setRemovingWordId(item.word_id);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/notebook', {
+        method: 'DELETE',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify({ word_id: item.word_id }),
+      });
+
+      if (!response.ok) {
+        setState({ status: 'error', message: '移除失败，请稍后再试' });
+        return;
+      }
+
+      setState((current) => {
+        if (current.status !== 'loaded') {
+          return current;
+        }
+
+        return {
+          ...current,
+          items: current.items.filter((word) => word.word_id !== item.word_id),
+        };
+      });
+    } catch {
+      setState({ status: 'error', message: '移除失败，请稍后再试' });
+    } finally {
+      setRemovingWordId(null);
+    }
+  }
 
   if (state.status === 'loading') {
     return <EmptyPanel text="生词本读取中..." />;
@@ -102,7 +140,23 @@ export function NotebookClient() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: 22 }}>{item.lemma}</h2>
-            <span style={{ color: '#78716c', fontSize: 13 }}>见过 {item.exposures} 次</span>
+            <button
+              type="button"
+              onClick={() => void handleRemove(item)}
+              disabled={removingWordId === item.word_id}
+              style={{
+                border: '1px solid #d6d3d1',
+                borderRadius: 8,
+                background: '#fff',
+                color: '#57534e',
+                cursor: removingWordId === item.word_id ? 'default' : 'pointer',
+                padding: '6px 10px',
+                font: 'inherit',
+                fontSize: 13,
+              }}
+            >
+              {removingWordId === item.word_id ? '移除中...' : '移除'}
+            </button>
           </div>
           <p style={{ margin: '10px 0 0', color: '#57534e', lineHeight: 1.7 }}>
             {item.zh_gloss ?? '暂无中文释义'}

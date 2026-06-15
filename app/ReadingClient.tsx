@@ -1,5 +1,6 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import { useMemo, useState } from 'react';
 
 import { createBrowserClient } from '@/lib/supabase';
@@ -24,6 +25,11 @@ type LookupStatus = {
   message: string;
   canSave: boolean;
   saved: boolean;
+};
+
+type PopoverPosition = {
+  top: number;
+  left: number;
 };
 
 const wordPattern = /[A-Za-z]+(?:['’][A-Za-z]+)?/g;
@@ -71,6 +77,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
   const supabase = useMemo(() => createBrowserClient(), []);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null);
 
   async function requestLookup(word: string, save: boolean) {
     const { data } = await supabase.auth.getSession();
@@ -86,7 +93,21 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
     });
   }
 
-  async function handleWordClick(word: string) {
+  function placePopover(event: MouseEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const top = Math.min(rect.bottom + 10, window.innerHeight - 180);
+    const left = Math.min(Math.max(rect.left, 12), window.innerWidth - 340);
+    setPopoverPosition({ top: Math.max(top, 12), left });
+  }
+
+  function closeLookup() {
+    setSelectedWord(null);
+    setLookupStatus(null);
+    setPopoverPosition(null);
+  }
+
+  async function handleWordClick(word: string, event: MouseEvent<HTMLButtonElement>) {
+    placePopover(event);
     const normalized = word.toLowerCase();
     setSelectedWord(normalized);
     setLookupStatus({ word, gloss: '', message: '查询中...', canSave: false, saved: false });
@@ -233,7 +254,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             <button
               key={token.key}
               type="button"
-              onClick={() => void handleWordClick(token.value)}
+              onClick={(event) => void handleWordClick(token.value, event)}
               style={{
                 appearance: 'none',
                 border: 0,
@@ -253,26 +274,61 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         })}
       </div>
 
-      {lookupStatus ? (
+      {lookupStatus && popoverPosition ? (
         <div
           style={{
-            marginTop: 24,
-            padding: '12px 14px',
+            position: 'fixed',
+            top: popoverPosition.top,
+            left: popoverPosition.left,
+            zIndex: 20,
+            width: 'min(320px, calc(100vw - 24px))',
+            padding: '14px',
             borderRadius: 8,
-            background: '#f5f5f4',
+            background: '#fff',
+            border: '1px solid #d6d3d1',
+            boxShadow: '0 12px 30px rgba(28, 25, 23, 0.14)',
             color: '#57534e',
             fontSize: 14,
           }}
         >
-          <strong style={{ color: '#292524' }}>{lookupStatus.word}</strong>
-          {lookupStatus.gloss ? <span style={{ marginLeft: 8 }}>{lookupStatus.gloss}</span> : null}
-          <span style={{ marginLeft: 8 }}>{lookupStatus.message}</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 12,
+              alignItems: 'flex-start',
+            }}
+          >
+            <div>
+              <strong style={{ color: '#292524', fontSize: 18 }}>{lookupStatus.word}</strong>
+              {lookupStatus.gloss ? (
+                <p style={{ margin: '8px 0 0', lineHeight: 1.6 }}>{lookupStatus.gloss}</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              aria-label="关闭查词结果"
+              onClick={closeLookup}
+              style={{
+                border: 0,
+                background: 'transparent',
+                color: '#78716c',
+                cursor: 'pointer',
+                fontSize: 20,
+                lineHeight: 1,
+                padding: 0,
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <p style={{ margin: '10px 0 0', lineHeight: 1.6 }}>{lookupStatus.message}</p>
           {lookupStatus.canSave ? (
             <button
               type="button"
               onClick={() => void handleSaveWord()}
               style={{
-                marginLeft: 12,
+                marginTop: 12,
                 border: '1px solid #292524',
                 borderRadius: 8,
                 background: '#292524',
@@ -286,7 +342,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             </button>
           ) : null}
           {lookupStatus.saved ? (
-            <a href="/notebook" style={{ marginLeft: 12, color: '#57534e' }}>
+            <a href="/notebook" style={{ display: 'inline-block', marginTop: 12, color: '#57534e' }}>
               查看生词本
             </a>
           ) : null}
