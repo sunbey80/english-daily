@@ -6,7 +6,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getRequestUser } from '@/lib/auth';
-import { lemmatizeText } from '@/lib/lemmatize';
+import { lookupCandidates } from '@/lib/lookup-lemma';
 import { createServiceClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -17,17 +17,10 @@ type LookupWord = {
   zh_gloss: string | null;
 };
 
+// 注：单词查询用轻量的 lookupCandidates（无 wink 依赖），
+// 避免把 13MB 的 wink-lexicon 打进 Worker。详见 lib/lookup-lemma.ts。
 function buildLookupCandidates(input: string) {
-  const rawLower = input.toLowerCase();
-  const tokens = lemmatizeText(input, { rescue: new Set([rawLower]) });
-  const candidates = new Set<string>([rawLower]);
-
-  for (const token of tokens) {
-    candidates.add(token.lemma);
-    candidates.add(token.rawLower);
-  }
-
-  return Array.from(candidates).filter((candidate) => /^[a-z]+(?:-[a-z]+)*$/.test(candidate));
+  return lookupCandidates(input);
 }
 
 function chooseBestWord(words: LookupWord[], candidates: string[]) {
