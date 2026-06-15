@@ -11,9 +11,10 @@ export default async function HomePage() {
   const chapter = await getTodayChapter();
 
   return (
-    <main style={{ maxWidth: 680, margin: '0 auto', padding: '48px 20px' }}>
-      <h1 style={{ fontSize: 28, marginBottom: 8 }}>English Daily</h1>
-      <p style={{ color: '#78716c', marginTop: 0 }}>每日连载 · 在读故事中自然习得生词</p>
+    <main style={{ maxWidth: 760, margin: '0 auto', padding: '52px 20px 80px' }}>
+      <p style={{ color: '#64d2c8', margin: '0 0 8px', fontSize: 14 }}>Chapter reader</p>
+      <h1 style={{ fontSize: 34, margin: 0, letterSpacing: 0 }}>English Daily</h1>
+      <p style={{ color: '#b9aaa0', marginTop: 10 }}>每日连载 · 在读故事中自然习得生词</p>
 
       {chapter ? (
         <ReadingClient chapter={chapter} />
@@ -22,12 +23,12 @@ export default async function HomePage() {
           style={{
             marginTop: 32,
             padding: 24,
-            background: '#fff',
-            border: '1px solid #e7e5e4',
+            background: '#211a23',
+            border: '1px solid #3a3038',
             borderRadius: 12,
           }}
         >
-          <p style={{ color: '#78716c', margin: 0 }}>今日章节还未发布。</p>
+          <p style={{ color: '#b9aaa0', margin: 0 }}>今日章节还未发布。</p>
         </section>
       )}
     </main>

@@ -144,7 +144,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             padding: '1px 2px',
             margin: 0,
             background: isSelected ? '#fde68a' : 'transparent',
-            color: 'inherit',
+            color: isSelected ? '#1a1416' : 'inherit',
             cursor: 'pointer',
             font: 'inherit',
             lineHeight: 'inherit',
@@ -158,8 +158,9 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
 
   function placePopover(event: MouseEvent<HTMLButtonElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
-    const top = Math.min(rect.bottom + 10, window.innerHeight - 180);
-    const left = Math.min(Math.max(rect.left, 12), window.innerWidth - 340);
+    const popoverWidth = Math.min(360, window.innerWidth - 32);
+    const top = Math.min(rect.bottom + 12, window.innerHeight - 220);
+    const left = Math.min(Math.max(rect.left, 16), window.innerWidth - popoverWidth - 16);
     setPopoverPosition({ top: Math.max(top, 12), left });
   }
 
@@ -292,11 +293,11 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
     <article
       style={{
         marginTop: 32,
-        padding: 24,
-        background: '#fff',
-        border: '1px solid #e7e5e4',
-        borderRadius: 12,
-        boxShadow: '0 1px 2px rgba(28, 25, 23, 0.04)',
+        padding: 28,
+        background: '#211a23',
+        border: '1px solid #3a3038',
+        borderRadius: 16,
+        boxShadow: '0 24px 70px rgba(0, 0, 0, 0.26)',
       }}
     >
       <div
@@ -306,11 +307,11 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           gap: 16,
           alignItems: 'baseline',
           marginBottom: 24,
-          color: '#78716c',
+          color: '#b9aaa0',
           fontSize: 14,
         }}
       >
-        <span>Chapter {chapter.seq}</span>
+        <span style={{ color: '#64d2c8' }}>Chapter {chapter.seq}</span>
         <span>ID #{chapter.id}</span>
       </div>
 
@@ -319,7 +320,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           fontSize: 20,
           lineHeight: 1.85,
           whiteSpace: 'pre-wrap',
-          color: '#292524',
+          color: '#f7efe4',
         }}
       >
         {showTranslation && chapter.translation_units.length > 0
@@ -329,7 +330,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
               return (
                 <div key={`${unit.paragraph}-${index}`} style={{ marginTop: startsParagraph && index > 0 ? 28 : 0 }}>
                   <p style={{ margin: 0 }}>{renderClickableText(unit.en)}</p>
-                  <p style={{ margin: '6px 0 14px', color: '#78716c', fontSize: 16, lineHeight: 1.7 }}>
+                  <p style={{ margin: '6px 0 14px', color: '#b9aaa0', fontSize: 16, lineHeight: 1.7 }}>
                     {unit.zh}
                   </p>
                 </div>
@@ -349,13 +350,13 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             top: popoverPosition.top,
             left: popoverPosition.left,
             zIndex: 20,
-            width: 'min(320px, calc(100vw - 24px))',
-            padding: '14px',
-            borderRadius: 8,
-            background: '#fff',
-            border: '1px solid #d6d3d1',
-            boxShadow: '0 12px 30px rgba(28, 25, 23, 0.14)',
-            color: '#57534e',
+            width: 'min(360px, calc(100vw - 32px))',
+            padding: '16px',
+            borderRadius: 12,
+            background: '#2a202b',
+            border: '1px solid #f6c453',
+            boxShadow: '0 18px 44px rgba(0, 0, 0, 0.36)',
+            color: '#d8cabe',
             fontSize: 14,
           }}
         >
@@ -368,9 +369,9 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             }}
           >
             <div>
-              <strong style={{ color: '#292524', fontSize: 18 }}>{lookupStatus.word}</strong>
+              <strong style={{ color: '#f7efe4', fontSize: 18 }}>{lookupStatus.word}</strong>
               {lookupStatus.phoneticUs ? (
-                <span style={{ marginLeft: 8, color: '#78716c' }}>美 {lookupStatus.phoneticUs}</span>
+                <span style={{ marginLeft: 8, color: '#64d2c8' }}>美 {lookupStatus.phoneticUs}</span>
               ) : null}
               {lookupStatus.gloss ? (
                 <p style={{ margin: '8px 0 0', lineHeight: 1.6 }}>{lookupStatus.gloss}</p>
@@ -383,7 +384,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
               style={{
                 border: 0,
                 background: 'transparent',
-                color: '#78716c',
+                color: '#b9aaa0',
                 cursor: 'pointer',
                 fontSize: 20,
                 lineHeight: 1,
@@ -400,10 +401,10 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
               onClick={() => void handleSaveWord()}
               style={{
                 marginTop: 12,
-                border: '1px solid #292524',
+                border: '1px solid #f6c453',
                 borderRadius: 8,
-                background: '#292524',
-                color: '#fff',
+                background: '#f6c453',
+                color: '#1a1416',
                 cursor: 'pointer',
                 padding: '6px 10px',
                 font: 'inherit',
@@ -413,7 +414,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             </button>
           ) : null}
           {lookupStatus.saved ? (
-            <a href="/notebook" style={{ display: 'inline-block', marginTop: 12, color: '#57534e' }}>
+            <a href="/notebook" style={{ display: 'inline-block', marginTop: 12, color: '#64d2c8' }}>
               查看生词本
             </a>
           ) : null}
@@ -428,18 +429,18 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           onClick={() => setShowTranslation((value) => !value)}
           style={{
             position: 'fixed',
-            right: 24,
-            bottom: 24,
+            right: 20,
+            bottom: 20,
             zIndex: 15,
-            border: '1px solid #292524',
+            border: '1px solid #f6c453',
             borderRadius: 999,
-            background: showTranslation ? '#292524' : '#fff',
-            color: showTranslation ? '#fff' : '#292524',
+            background: showTranslation ? '#f6c453' : '#211a23',
+            color: showTranslation ? '#1a1416' : '#f7efe4',
             cursor: 'pointer',
             padding: '11px 16px',
             font: 'inherit',
             fontSize: 14,
-            boxShadow: '0 10px 26px rgba(28, 25, 23, 0.16)',
+            boxShadow: '0 14px 34px rgba(0, 0, 0, 0.34)',
           }}
         >
           {showTranslation ? '隐藏对照' : '中文对照'} · T

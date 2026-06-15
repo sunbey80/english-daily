@@ -14,8 +14,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         style={{
           margin: 0,
           fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-          background: '#fafaf9',
-          color: '#1c1917',
+          background: '#100d12',
+          color: '#f7efe4',
+          minHeight: '100vh',
         }}
       >
         <AuthNav />

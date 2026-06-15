@@ -1,8 +1,10 @@
 import { createServiceClient } from '@/lib/supabase';
+import { getUsPhonetic } from '@/lib/phonetic';
 
 export type NotebookItem = {
   word_id: number;
   lemma: string;
+  phonetic_us: string | null;
   zh_gloss: string | null;
   state: number;
   exposures: number;
@@ -60,8 +62,8 @@ export async function getNotebookItems(userId: string | null) {
 
   const wordsById = new Map((words ?? []).map((word) => [word.id, word]));
 
-  return userWords
-    .map<NotebookItem | null>((item) => {
+  const items = userWords
+    .map<Omit<NotebookItem, 'phonetic_us'> | null>((item) => {
       const word = wordsById.get(item.word_id);
       if (!word) {
         return null;
@@ -79,5 +81,12 @@ export async function getNotebookItems(userId: string | null) {
         source_chapter: null,
       };
     })
-    .filter((item): item is NotebookItem => item !== null);
+    .filter((item): item is Omit<NotebookItem, 'phonetic_us'> => item !== null);
+
+  return Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      phonetic_us: await getUsPhonetic([item.lemma]),
+    })),
+  );
 }

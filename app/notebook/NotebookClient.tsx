@@ -125,10 +125,11 @@ export function NotebookClient() {
         <article
           key={item.word_id}
           style={{
-            padding: 18,
-            background: '#fff',
-            border: '1px solid #e7e5e4',
-            borderRadius: 10,
+            padding: 20,
+            background: '#211a23',
+            border: '1px solid #3a3038',
+            borderRadius: 14,
+            boxShadow: '0 18px 44px rgba(0, 0, 0, 0.18)',
           }}
         >
           <div
@@ -139,16 +140,21 @@ export function NotebookClient() {
               alignItems: 'baseline',
             }}
           >
-            <h2 style={{ margin: 0, fontSize: 22 }}>{item.lemma}</h2>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 24, color: '#f7efe4' }}>{item.lemma}</h2>
+              {item.phonetic_us ? (
+                <p style={{ margin: '4px 0 0', color: '#64d2c8', fontSize: 14 }}>美 {item.phonetic_us}</p>
+              ) : null}
+            </div>
             <button
               type="button"
               onClick={() => void handleRemove(item)}
               disabled={removingWordId === item.word_id}
               style={{
-                border: '1px solid #d6d3d1',
+                border: '1px solid #4a3f48',
                 borderRadius: 8,
-                background: '#fff',
-                color: '#57534e',
+                background: '#151117',
+                color: '#d8cabe',
                 cursor: removingWordId === item.word_id ? 'default' : 'pointer',
                 padding: '6px 10px',
                 font: 'inherit',
@@ -158,11 +164,11 @@ export function NotebookClient() {
               {removingWordId === item.word_id ? '移除中...' : '移除'}
             </button>
           </div>
-          <p style={{ margin: '10px 0 0', color: '#57534e', lineHeight: 1.7 }}>
+          <p style={{ margin: '12px 0 0', color: '#d8cabe', lineHeight: 1.7 }}>
             {item.zh_gloss ?? '暂无中文释义'}
           </p>
           {item.source_chapter ? (
-            <p style={{ margin: '12px 0 0', color: '#a8a29e', fontSize: 13 }}>
+            <p style={{ margin: '12px 0 0', color: '#b9aaa0', fontSize: 13 }}>
               来自 Chapter {item.source_chapter.seq}
             </p>
           ) : null}
@@ -178,12 +184,12 @@ function EmptyPanel({ text }: { text: string }) {
       style={{
         marginTop: 28,
         padding: 24,
-        background: '#fff',
-        border: '1px solid #e7e5e4',
-        borderRadius: 12,
+        background: '#211a23',
+        border: '1px solid #3a3038',
+        borderRadius: 14,
       }}
     >
-      <p style={{ color: '#78716c', margin: 0 }}>{text}</p>
+      <p style={{ color: '#b9aaa0', margin: 0 }}>{text}</p>
     </section>
   );
 }

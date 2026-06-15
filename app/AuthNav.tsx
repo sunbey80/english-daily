@@ -38,36 +38,45 @@ export function AuthNav() {
   return (
     <nav
       style={{
-        maxWidth: 680,
+        maxWidth: 760,
         margin: '0 auto',
-        padding: '18px 20px 0',
+        padding: '20px 20px 0',
         display: 'flex',
         justifyContent: 'space-between',
         gap: 16,
         alignItems: 'center',
-        color: '#78716c',
+        color: '#b9aaa0',
         fontSize: 14,
       }}
     >
-      <div style={{ display: 'flex', gap: 14 }}>
-        <a href="/" style={{ color: '#57534e', textDecoration: 'none' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          padding: 4,
+          border: '1px solid #3a3038',
+          borderRadius: 999,
+          background: '#19141b',
+        }}
+      >
+        <a href="/" style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 10px' }}>
           今日阅读
         </a>
-        <a href="/notebook" style={{ color: '#57534e', textDecoration: 'none' }}>
+        <a href="/notebook" style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 10px' }}>
           生词本
         </a>
       </div>
       {session ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span>{session.user.email}</span>
+          <span style={{ color: '#d8cabe' }}>{session.user.email}</span>
           <button
             type="button"
             onClick={() => void handleSignOut()}
             style={{
-              border: '1px solid #d6d3d1',
+              border: '1px solid #4a3f48',
               borderRadius: 8,
-              background: '#fff',
-              color: '#57534e',
+              background: '#211a23',
+              color: '#f7efe4',
               cursor: 'pointer',
               padding: '6px 10px',
               font: 'inherit',
@@ -77,7 +86,7 @@ export function AuthNav() {
           </button>
         </div>
       ) : (
-        <a href="/login" style={{ color: '#57534e', textDecoration: 'none' }}>
+        <a href="/login" style={{ color: '#f6c453', textDecoration: 'none' }}>
           登录
         </a>
       )}

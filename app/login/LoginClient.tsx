@@ -92,15 +92,16 @@ export function LoginClient() {
     <section
       style={{
         marginTop: 28,
-        padding: 24,
-        background: '#fff',
-        border: '1px solid #e7e5e4',
-        borderRadius: 12,
+        padding: 26,
+        background: '#211a23',
+        border: '1px solid #3a3038',
+        borderRadius: 14,
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.24)',
       }}
     >
       {session ? (
         <div>
-          <p style={{ marginTop: 0, color: '#57534e' }}>当前账号：{session.user.email}</p>
+          <p style={{ marginTop: 0, color: '#d8cabe' }}>当前账号：{session.user.email}</p>
           <div style={{ display: 'flex', gap: 12 }}>
             <a href="/" style={linkButtonStyle}>
               回到今日阅读
@@ -159,7 +160,7 @@ export function LoginClient() {
         </form>
       )}
 
-      <p style={{ margin: '18px 0 0', color: '#78716c', fontSize: 14 }}>{message}</p>
+      <p style={{ margin: '18px 0 0', color: '#b9aaa0', fontSize: 14 }}>{message}</p>
     </section>
   );
 }
@@ -167,24 +168,25 @@ export function LoginClient() {
 const labelStyle = {
   display: 'grid',
   gap: 6,
-  color: '#57534e',
+  color: '#d8cabe',
   fontSize: 14,
   marginBottom: 14,
 } satisfies React.CSSProperties;
 
 const inputStyle = {
-  border: '1px solid #d6d3d1',
+  border: '1px solid #4a3f48',
   borderRadius: 8,
   padding: '10px 12px',
   font: 'inherit',
-  color: '#292524',
+  color: '#f7efe4',
+  background: '#151117',
 } satisfies React.CSSProperties;
 
 const buttonStyle = {
-  border: '1px solid #292524',
+  border: '1px solid #f6c453',
   borderRadius: 8,
-  background: '#292524',
-  color: '#fff',
+  background: '#f6c453',
+  color: '#1a1416',
   cursor: 'pointer',
   padding: '10px 14px',
   font: 'inherit',
@@ -197,10 +199,10 @@ const linkButtonStyle = {
 } satisfies React.CSSProperties;
 
 const tabStyle = {
-  border: '1px solid #d6d3d1',
+  border: '1px solid #4a3f48',
   borderRadius: 8,
-  background: '#fff',
-  color: '#57534e',
+  background: '#151117',
+  color: '#d8cabe',
   cursor: 'pointer',
   padding: '8px 12px',
   font: 'inherit',
@@ -208,6 +210,6 @@ const tabStyle = {
 
 const activeTabStyle = {
   ...tabStyle,
-  borderColor: '#292524',
-  color: '#292524',
+  borderColor: '#64d2c8',
+  color: '#64d2c8',
 } satisfies React.CSSProperties;
