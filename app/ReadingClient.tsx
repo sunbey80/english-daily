@@ -74,11 +74,12 @@ function tokenizeBody(body: string): Token[] {
 }
 
 export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
-  const tokens = useMemo(() => tokenizeBody(chapter.body), [chapter.body]);
+  const paragraphTexts = useMemo(() => chapter.body.split(/\n{2,}/), [chapter.body]);
   const supabase = useMemo(() => createBrowserClient(), []);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null);
+  const [showTranslation, setShowTranslation] = useState(false);
 
   async function requestLookup(word: string, save: boolean) {
     const { data } = await supabase.auth.getSession();
@@ -91,6 +92,37 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
       method: 'POST',
       headers,
       body: JSON.stringify({ word, save }),
+    });
+  }
+
+  function renderClickableText(text: string) {
+    return tokenizeBody(text).map((token) => {
+      if (token.type === 'text') {
+        return <span key={token.key}>{token.value}</span>;
+      }
+
+      const isSelected = token.normalized === selectedWord;
+      return (
+        <button
+          key={token.key}
+          type="button"
+          onClick={(event) => void handleWordClick(token.value, event)}
+          style={{
+            appearance: 'none',
+            border: 0,
+            borderRadius: 6,
+            padding: '1px 2px',
+            margin: 0,
+            background: isSelected ? '#fde68a' : 'transparent',
+            color: 'inherit',
+            cursor: 'pointer',
+            font: 'inherit',
+            lineHeight: 'inherit',
+          }}
+        >
+          {token.value}
+        </button>
+      );
     });
   }
 
@@ -252,6 +284,26 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         <span>ID #{chapter.id}</span>
       </div>
 
+      {chapter.translation_units.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setShowTranslation((value) => !value)}
+          style={{
+            marginBottom: 20,
+            border: '1px solid #d6d3d1',
+            borderRadius: 8,
+            background: '#fff',
+            color: '#57534e',
+            cursor: 'pointer',
+            padding: '8px 12px',
+            font: 'inherit',
+            fontSize: 14,
+          }}
+        >
+          {showTranslation ? '隐藏中文对照' : '显示中文对照'}
+        </button>
+      ) : null}
+
       <div
         style={{
           fontSize: 20,
@@ -260,34 +312,24 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           color: '#292524',
         }}
       >
-        {tokens.map((token) => {
-          if (token.type === 'text') {
-            return <span key={token.key}>{token.value}</span>;
-          }
-
-          const isSelected = token.normalized === selectedWord;
-          return (
-            <button
-              key={token.key}
-              type="button"
-              onClick={(event) => void handleWordClick(token.value, event)}
-              style={{
-                appearance: 'none',
-                border: 0,
-                borderRadius: 6,
-                padding: '1px 2px',
-                margin: 0,
-                background: isSelected ? '#fde68a' : 'transparent',
-                color: 'inherit',
-                cursor: 'pointer',
-                font: 'inherit',
-                lineHeight: 'inherit',
-              }}
-            >
-              {token.value}
-            </button>
-          );
-        })}
+        {showTranslation && chapter.translation_units.length > 0
+          ? chapter.translation_units.map((unit, index) => {
+              const previous = chapter.translation_units[index - 1];
+              const startsParagraph = index === 0 || previous?.paragraph !== unit.paragraph;
+              return (
+                <div key={`${unit.paragraph}-${index}`} style={{ marginTop: startsParagraph && index > 0 ? 28 : 0 }}>
+                  <p style={{ margin: 0 }}>{renderClickableText(unit.en)}</p>
+                  <p style={{ margin: '6px 0 14px', color: '#78716c', fontSize: 16, lineHeight: 1.7 }}>
+                    {unit.zh}
+                  </p>
+                </div>
+              );
+            })
+          : paragraphTexts.map((paragraph, index) => (
+              <p key={index} style={{ margin: index === 0 ? 0 : '28px 0 0' }}>
+                {renderClickableText(paragraph)}
+              </p>
+            ))}
       </div>
 
       {lookupStatus && popoverPosition ? (

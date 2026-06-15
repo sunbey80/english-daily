@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase';
+import { getTranslationUnits, type TranslationUnit } from '@/lib/chapter-translation';
 
 export type TargetWord = {
   lemma: string;
@@ -10,6 +11,7 @@ export type TodayChapter = {
   seq: number;
   body: string;
   target_words: TargetWord[];
+  translation_units: TranslationUnit[];
 };
 
 type ChapterRow = {
@@ -38,11 +40,16 @@ function normalizeTargetWords(value: unknown): TargetWord[] {
 }
 
 function toTodayChapter(row: ChapterRow): TodayChapter {
-  return {
+  const chapter = {
     id: row.id,
     seq: row.seq,
     body: row.body,
     target_words: normalizeTargetWords(row.target_words),
+  };
+
+  return {
+    ...chapter,
+    translation_units: getTranslationUnits(chapter),
   };
 }
 
