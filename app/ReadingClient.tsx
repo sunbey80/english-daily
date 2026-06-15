@@ -1,7 +1,7 @@
 'use client';
 
 import type { MouseEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { createBrowserClient } from '@/lib/supabase';
 import type { TodayChapter } from '@/lib/today';
@@ -34,6 +34,15 @@ type PopoverPosition = {
 };
 
 const wordPattern = /[A-Za-z]+(?:['’][A-Za-z]+)?/g;
+
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target.isContentEditable;
+}
 
 function tokenizeBody(body: string): Token[] {
   const tokens: Token[] = [];
@@ -80,6 +89,27 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (
+        event.key.toLowerCase() !== 't' ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isTypingTarget(event.target) ||
+        chapter.translation_units.length === 0
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      setShowTranslation((value) => !value);
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chapter.translation_units.length]);
 
   async function requestLookup(word: string, save: boolean) {
     const { data } = await supabase.auth.getSession();
@@ -284,26 +314,6 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         <span>ID #{chapter.id}</span>
       </div>
 
-      {chapter.translation_units.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => setShowTranslation((value) => !value)}
-          style={{
-            marginBottom: 20,
-            border: '1px solid #d6d3d1',
-            borderRadius: 8,
-            background: '#fff',
-            color: '#57534e',
-            cursor: 'pointer',
-            padding: '8px 12px',
-            font: 'inherit',
-            fontSize: 14,
-          }}
-        >
-          {showTranslation ? '隐藏中文对照' : '显示中文对照'}
-        </button>
-      ) : null}
-
       <div
         style={{
           fontSize: 20,
@@ -408,6 +418,32 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             </a>
           ) : null}
         </div>
+      ) : null}
+
+      {chapter.translation_units.length > 0 ? (
+        <button
+          type="button"
+          aria-pressed={showTranslation}
+          title="按 T 切换中文对照"
+          onClick={() => setShowTranslation((value) => !value)}
+          style={{
+            position: 'fixed',
+            right: 24,
+            bottom: 24,
+            zIndex: 15,
+            border: '1px solid #292524',
+            borderRadius: 999,
+            background: showTranslation ? '#292524' : '#fff',
+            color: showTranslation ? '#fff' : '#292524',
+            cursor: 'pointer',
+            padding: '11px 16px',
+            font: 'inherit',
+            fontSize: 14,
+            boxShadow: '0 10px 26px rgba(28, 25, 23, 0.16)',
+          }}
+        >
+          {showTranslation ? '隐藏对照' : '中文对照'} · T
+        </button>
       ) : null}
     </article>
   );
