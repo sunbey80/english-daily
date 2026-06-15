@@ -158,7 +158,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
 
   function placePopover(event: MouseEvent<HTMLButtonElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
-    const popoverWidth = Math.min(360, window.innerWidth - 32);
+    const popoverWidth = Math.min(290, window.innerWidth - 32);
     const top = Math.min(rect.bottom + 12, window.innerHeight - 220);
     const left = Math.min(Math.max(rect.left, 16), window.innerWidth - popoverWidth - 16);
     setPopoverPosition({ top: Math.max(top, 12), left });
@@ -350,7 +350,8 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
             top: popoverPosition.top,
             left: popoverPosition.left,
             zIndex: 20,
-            width: 'min(360px, calc(100vw - 32px))',
+            boxSizing: 'border-box',
+            width: 'min(290px, calc(100vw - 32px))',
             padding: '16px',
             borderRadius: 12,
             background: '#2a202b',
