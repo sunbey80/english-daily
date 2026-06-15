@@ -7,6 +7,17 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# 公开值（会被打进客户端包/出现在 URL，非密钥）直接写在这里，
+# 避免依赖手动配置 GitHub secret：
+#   - NEXT_PUBLIC_* 是设计上要发到浏览器的（Supabase publishable key 可安全公开）
+#   - CLOUDFLARE_ACCOUNT_ID 是账号标识符，非凭据
+#   - OPENROUTER_MODEL 只是模型名
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://kbtycoqitreovqjdidnr.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_KWgm0HkVvFUSKjH7xSGR-g_UjJMMKst
+  CLOUDFLARE_ACCOUNT_ID: c9f0999f6f6163a7afd4f12811387554
+  OPENROUTER_MODEL: anthropic/claude-sonnet-4.6
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,19 +33,15 @@ jobs:
         run: npm ci
 
       - name: Build (OpenNext)
-        # NEXT_PUBLIC_* 在 next build 时被内联进产物，必须在构建期注入
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: npx opennextjs-cloudflare build
 
       - name: Deploy + 上传运行时密钥
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
-          # 这些是服务端运行时密钥，作为 Worker secret 上传（不会进客户端包）
+          # 服务端运行时密钥，作为 Worker secret 上传（不会进客户端包）
           secrets: |
             SUPABASE_SECRET_KEY
             OPENROUTER_API_KEY
@@ -43,5 +50,5 @@ jobs:
         env:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+          OPENROUTER_MODEL: ${{ env.OPENROUTER_MODEL }}
           GENERATE_SECRET: ${{ secrets.GENERATE_SECRET }}
