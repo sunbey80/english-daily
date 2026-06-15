@@ -1,6 +1,6 @@
 /**
  * POST /api/lookup —— 入参 {word}：词形还原 → 查 word 表返回释义；
- * 同时把该词在该用户的 user_word 标记为"学习中/不认识"。
+ * 可选 save=true 时，把该词在当前用户的 user_word 标记为"学习中/不认识"。
  * TODO: 接 FSRS 后，把这里的 due_at 简化逻辑替换为 rate(again)。
  */
 import { type NextRequest, NextResponse } from 'next/server';
@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
     payload && typeof payload === 'object' && 'word' in payload && typeof payload.word === 'string'
       ? payload.word.trim()
       : '';
+  const save =
+    payload && typeof payload === 'object' && 'save' in payload && payload.save === true;
 
   if (!word) {
     return NextResponse.json({ error: 'missing_word' }, { status: 400 });
@@ -137,12 +139,13 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await getRequestUser(request);
-  const learned = await markUserWordLearning(user?.id ?? null, matchedWord.id);
+  const saved = save ? await markUserWordLearning(user?.id ?? null, matchedWord.id) : false;
 
   return NextResponse.json({
     word,
     lemma: matchedWord.lemma,
     zh_gloss: matchedWord.zh_gloss,
-    learned,
+    authenticated: Boolean(user),
+    saved,
   });
 }

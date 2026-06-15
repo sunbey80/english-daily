@@ -20,7 +20,10 @@ type Token =
 
 type LookupStatus = {
   word: string;
+  gloss: string;
   message: string;
+  canSave: boolean;
+  saved: boolean;
 };
 
 const wordPattern = /[A-Za-z]+(?:['’][A-Za-z]+)?/g;
@@ -69,23 +72,27 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
 
+  async function requestLookup(word: string, save: boolean) {
+    const { data } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (data.session?.access_token) {
+      headers.authorization = `Bearer ${data.session.access_token}`;
+    }
+
+    return fetch('/api/lookup', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ word, save }),
+    });
+  }
+
   async function handleWordClick(word: string) {
     const normalized = word.toLowerCase();
     setSelectedWord(normalized);
-    setLookupStatus({ word, message: '查询中...' });
+    setLookupStatus({ word, gloss: '', message: '查询中...', canSave: false, saved: false });
 
     try {
-      const { data } = await supabase.auth.getSession();
-      const headers: Record<string, string> = { 'content-type': 'application/json' };
-      if (data.session?.access_token) {
-        headers.authorization = `Bearer ${data.session.access_token}`;
-      }
-
-      const response = await fetch('/api/lookup', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ word }),
-      });
+      const response = await requestLookup(word, false);
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -95,13 +102,22 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           'error' in payload &&
           payload.error === 'word_not_found'
         ) {
-          setLookupStatus({ word, message: '词表暂未收录' });
+          setLookupStatus({
+            word,
+            gloss: '',
+            message: '词表暂未收录',
+            canSave: false,
+            saved: false,
+          });
           return;
         }
 
         setLookupStatus({
           word,
+          gloss: '',
           message: `lookup 请求未完成（${response.status}）`,
+          canSave: false,
+          saved: false,
         });
         return;
       }
@@ -109,10 +125,67 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
       const gloss =
         payload && typeof payload === 'object' && 'zh_gloss' in payload && payload.zh_gloss
           ? String(payload.zh_gloss)
-          : '已加入生词本，释义待补充';
-      setLookupStatus({ word, message: gloss });
+          : '释义待补充';
+      const authenticated =
+        payload &&
+        typeof payload === 'object' &&
+        'authenticated' in payload &&
+        payload.authenticated === true;
+      setLookupStatus({
+        word,
+        gloss,
+        message: authenticated ? '需要的话，可以加入生词本。' : '登录后可加入生词本。',
+        canSave: authenticated,
+        saved: false,
+      });
     } catch {
-      setLookupStatus({ word, message: 'lookup 请求失败，稍后再试' });
+      setLookupStatus({
+        word,
+        gloss: '',
+        message: 'lookup 请求失败，稍后再试',
+        canSave: false,
+        saved: false,
+      });
+    }
+  }
+
+  async function handleSaveWord() {
+    if (!lookupStatus || lookupStatus.saved) {
+      return;
+    }
+
+    const current = lookupStatus;
+    setLookupStatus({ ...current, message: '正在加入生词本...', canSave: false });
+
+    try {
+      const response = await requestLookup(current.word, true);
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setLookupStatus({
+          ...current,
+          message: `加入失败（${response.status}）`,
+          canSave: current.canSave,
+        });
+        return;
+      }
+
+      const saved =
+        payload && typeof payload === 'object' && 'saved' in payload && payload.saved === true;
+      const authenticated =
+        payload &&
+        typeof payload === 'object' &&
+        'authenticated' in payload &&
+        payload.authenticated === true;
+
+      setLookupStatus({
+        ...current,
+        message: saved ? '已加入生词本。' : authenticated ? '加入失败，请稍后再试。' : '登录后可加入生词本。',
+        canSave: authenticated && !saved,
+        saved,
+      });
+    } catch {
+      setLookupStatus({ ...current, message: '加入失败，请稍后再试。', canSave: current.canSave });
     }
   }
 
@@ -192,7 +265,31 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           }}
         >
           <strong style={{ color: '#292524' }}>{lookupStatus.word}</strong>
+          {lookupStatus.gloss ? <span style={{ marginLeft: 8 }}>{lookupStatus.gloss}</span> : null}
           <span style={{ marginLeft: 8 }}>{lookupStatus.message}</span>
+          {lookupStatus.canSave ? (
+            <button
+              type="button"
+              onClick={() => void handleSaveWord()}
+              style={{
+                marginLeft: 12,
+                border: '1px solid #292524',
+                borderRadius: 8,
+                background: '#292524',
+                color: '#fff',
+                cursor: 'pointer',
+                padding: '6px 10px',
+                font: 'inherit',
+              }}
+            >
+              加入生词本
+            </button>
+          ) : null}
+          {lookupStatus.saved ? (
+            <a href="/notebook" style={{ marginLeft: 12, color: '#57534e' }}>
+              查看生词本
+            </a>
+          ) : null}
         </div>
       ) : null}
     </article>
