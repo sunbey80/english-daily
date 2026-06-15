@@ -8,6 +8,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth';
 import { getFallbackGloss } from '@/lib/lookup-gloss';
 import { lookupCandidates } from '@/lib/lookup-lemma';
+import { getUsPhonetic } from '@/lib/phonetic';
 import { createServiceClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -140,11 +141,13 @@ export async function POST(request: NextRequest) {
 
   const user = await getRequestUser(request);
   const saved = save ? await markUserWordLearning(user?.id ?? null, matchedWord.id) : false;
+  const phoneticUs = await getUsPhonetic([...candidates, matchedWord.lemma]);
 
   return NextResponse.json({
     word,
     lemma: matchedWord.lemma,
     zh_gloss: matchedWord.zh_gloss,
+    phonetic_us: phoneticUs,
     authenticated: Boolean(user),
     saved,
   });

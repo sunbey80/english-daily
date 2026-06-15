@@ -21,6 +21,7 @@ type Token =
 
 type LookupStatus = {
   word: string;
+  phoneticUs: string;
   gloss: string;
   message: string;
   canSave: boolean;
@@ -110,7 +111,14 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
     placePopover(event);
     const normalized = word.toLowerCase();
     setSelectedWord(normalized);
-    setLookupStatus({ word, gloss: '', message: '查询中...', canSave: false, saved: false });
+    setLookupStatus({
+      word,
+      phoneticUs: '',
+      gloss: '',
+      message: '查询中...',
+      canSave: false,
+      saved: false,
+    });
 
     try {
       const response = await requestLookup(word, false);
@@ -125,6 +133,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         ) {
           setLookupStatus({
             word,
+            phoneticUs: '',
             gloss: '',
             message: '词表暂未收录',
             canSave: false,
@@ -135,6 +144,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
 
         setLookupStatus({
           word,
+          phoneticUs: '',
           gloss: '',
           message: `lookup 请求未完成（${response.status}）`,
           canSave: false,
@@ -147,6 +157,10 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         payload && typeof payload === 'object' && 'zh_gloss' in payload && payload.zh_gloss
           ? String(payload.zh_gloss)
           : '释义待补充';
+      const phoneticUs =
+        payload && typeof payload === 'object' && 'phonetic_us' in payload && payload.phonetic_us
+          ? String(payload.phonetic_us)
+          : '美式音标待补充';
       const authenticated =
         payload &&
         typeof payload === 'object' &&
@@ -154,6 +168,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         payload.authenticated === true;
       setLookupStatus({
         word,
+        phoneticUs,
         gloss,
         message: authenticated ? '需要的话，可以加入生词本。' : '登录后可加入生词本。',
         canSave: authenticated,
@@ -162,6 +177,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
     } catch {
       setLookupStatus({
         word,
+        phoneticUs: '',
         gloss: '',
         message: 'lookup 请求失败，稍后再试',
         canSave: false,
@@ -301,6 +317,9 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
           >
             <div>
               <strong style={{ color: '#292524', fontSize: 18 }}>{lookupStatus.word}</strong>
+              {lookupStatus.phoneticUs ? (
+                <span style={{ marginLeft: 8, color: '#78716c' }}>美 {lookupStatus.phoneticUs}</span>
+              ) : null}
               {lookupStatus.gloss ? (
                 <p style={{ margin: '8px 0 0', lineHeight: 1.6 }}>{lookupStatus.gloss}</p>
               ) : null}
