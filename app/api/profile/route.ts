@@ -7,6 +7,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const user = await getRequestUser(request);
   if (!user) {

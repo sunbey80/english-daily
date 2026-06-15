@@ -9,6 +9,8 @@ import { getRequestUser } from '@/lib/auth';
 import { lemmatizeText } from '@/lib/lemmatize';
 import { createServiceClient } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 type LookupWord = {
   id: number;
   lemma: string;

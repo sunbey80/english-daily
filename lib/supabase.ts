@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-if (!url) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+// 注意：env 校验放在函数内（调用时），不要放模块顶层。
+// 顶层 throw 会在 next build 收集页面数据时（导入路由模块即触发）报错，
+// 导致构建失败（"Failed to collect page data"）。
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing ${name}`);
+  }
+  return value;
 }
 
 /**
@@ -12,10 +16,10 @@ if (!url) {
  * 用于前端组件与走用户 JWT 的请求。
  */
 export function createBrowserClient() {
-  if (!publishableKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
-  }
-  return createClient(url!, publishableKey);
+  return createClient(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'),
+  );
 }
 
 /**
@@ -23,11 +27,11 @@ export function createBrowserClient() {
  * 仅在服务端（API route / Cron / 脚本）使用，绝不暴露给浏览器。
  */
 export function createServiceClient() {
-  const secretKey = process.env.SUPABASE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error('Missing SUPABASE_SECRET_KEY (server-only)');
-  }
-  return createClient(url!, secretKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return createClient(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('SUPABASE_SECRET_KEY'),
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
 }
