@@ -35,13 +35,20 @@ jobs:
       - name: Build (OpenNext)
         run: npx opennextjs-cloudflare build
 
-      - name: Deploy + 上传运行时密钥
+      # 先部署（创建/更新 Worker）。首次部署必须先建出 Worker，密钥才有对象可挂。
+      - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
-          # 服务端运行时密钥，作为 Worker secret 上传（不会进客户端包）
+
+      # 再把服务端运行时密钥上传到已存在的 Worker（不会进客户端包）。
+      - name: 上传运行时密钥
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           secrets: |
             SUPABASE_SECRET_KEY
             OPENROUTER_API_KEY
