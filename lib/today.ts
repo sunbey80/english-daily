@@ -125,3 +125,50 @@ export async function getTodayChapter(userId?: string | null) {
 
   return getLatestPublishedGenericChapter(nowIso);
 }
+
+export type ChapterSummary = {
+  id: number;
+  seq: number;
+  excerpt: string;
+  publish_at: string | null;
+};
+
+/** 取正文开头一小段作为列表摘要（去掉便条星号与换行）。 */
+function makeExcerpt(body: string, max = 90): string {
+  const text = body.replace(/[*\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+/** 全部已发布的通用版章节，按 seq 倒序（最新在前），用于「全部篇章」列表。 */
+export async function getPublishedChapters(): Promise<ChapterSummary[]> {
+  const supabase = createServiceClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('chapter')
+    .select('id, seq, body, publish_at')
+    .is('user_id', null)
+    .lte('publish_at', nowIso)
+    .order('seq', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    id: r.id as number,
+    seq: r.seq as number,
+    excerpt: makeExcerpt(r.body as string),
+    publish_at: (r.publish_at as string | null) ?? null,
+  }));
+}
+
+/** 按 seq 取指定通用版章节（仅已发布），用于历史篇章阅读页。 */
+export async function getChapterBySeq(seq: number): Promise<TodayChapter | null> {
+  const supabase = createServiceClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('chapter')
+    .select(CHAPTER_COLUMNS)
+    .is('user_id', null)
+    .eq('seq', seq)
+    .lte('publish_at', nowIso)
+    .maybeSingle<ChapterRow>();
+  if (error) throw error;
+  return data ? toTodayChapter(data) : null;
+}

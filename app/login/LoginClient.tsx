@@ -103,7 +103,7 @@ export function LoginClient() {
         <div>
           <p style={{ marginTop: 0, color: '#d8cabe' }}>当前账号：{session.user.email}</p>
           <div style={{ display: 'flex', gap: 12 }}>
-            <a href="/" style={linkButtonStyle}>
+            <a href="/today" style={linkButtonStyle}>
               回到今日阅读
             </a>
             <button type="button" onClick={() => void handleSignOut()} style={buttonStyle}>

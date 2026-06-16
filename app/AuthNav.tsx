@@ -61,14 +61,20 @@ export function AuthNav() {
         }}
       >
         <a
-          href="/"
-          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 10px', whiteSpace: 'nowrap' }}
+          href="/today"
+          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
         >
-          今日阅读
+          今日
+        </a>
+        <a
+          href="/chapters"
+          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
+        >
+          篇章
         </a>
         <a
           href="/notebook"
-          style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 10px', whiteSpace: 'nowrap' }}
+          style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
         >
           生词本
         </a>
