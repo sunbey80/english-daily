@@ -57,18 +57,36 @@ export function AuthNav() {
           border: '1px solid #3a3038',
           borderRadius: 999,
           background: '#19141b',
+          flexShrink: 0,
         }}
       >
-        <a href="/" style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 10px' }}>
+        <a
+          href="/"
+          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 10px', whiteSpace: 'nowrap' }}
+        >
           今日阅读
         </a>
-        <a href="/notebook" style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 10px' }}>
+        <a
+          href="/notebook"
+          style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 10px', whiteSpace: 'nowrap' }}
+        >
           生词本
         </a>
       </div>
       {session ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: '#d8cabe' }}>{session.user.email}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span
+            title={session.user.email}
+            style={{
+              color: '#d8cabe',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+            }}
+          >
+            {session.user.email}
+          </span>
           <button
             type="button"
             onClick={() => void handleSignOut()}
@@ -80,6 +98,8 @@ export function AuthNav() {
               cursor: 'pointer',
               padding: '6px 10px',
               font: 'inherit',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             退出
