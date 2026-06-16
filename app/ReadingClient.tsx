@@ -1,7 +1,7 @@
 'use client';
 
 import type { MouseEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { createBrowserClient } from '@/lib/supabase';
 import type { TodayChapter } from '@/lib/today';
@@ -89,6 +89,31 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
   const [lookupStatus, setLookupStatus] = useState<LookupStatus | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<PopoverPosition | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  // 点击弹窗外部或按 Esc 关闭查词弹窗。
+  useEffect(() => {
+    if (!lookupStatus) {
+      return;
+    }
+    function handlePointerDown(event: globalThis.MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        closeLookup();
+      }
+    }
+    function handleEsc(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeLookup();
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEsc);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookupStatus]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -229,13 +254,16 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
         typeof payload === 'object' &&
         'authenticated' in payload &&
         payload.authenticated === true;
+      const alreadySaved =
+        payload && typeof payload === 'object' && 'saved' in payload && payload.saved === true;
       setLookupStatus({
         word,
         phoneticUs,
         gloss,
-        message: authenticated ? '需要的话，可以加入生词本。' : '登录后可加入生词本。',
-        canSave: authenticated,
-        saved: false,
+        // 已登录未收录：不显示提示文案，只留按钮；未登录：提示登录；已收录：无文案。
+        message: authenticated ? '' : '登录后可加入生词本。',
+        canSave: authenticated && !alreadySaved,
+        saved: alreadySaved,
       });
     } catch {
       setLookupStatus({
@@ -345,6 +373,7 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
 
       {lookupStatus && popoverPosition ? (
         <div
+          ref={popoverRef}
           style={{
             position: 'fixed',
             top: popoverPosition.top,
@@ -395,7 +424,9 @@ export function ReadingClient({ chapter }: { chapter: TodayChapter }) {
               ×
             </button>
           </div>
-          <p style={{ margin: '10px 0 0', lineHeight: 1.6 }}>{lookupStatus.message}</p>
+          {lookupStatus.message ? (
+            <p style={{ margin: '10px 0 0', lineHeight: 1.6 }}>{lookupStatus.message}</p>
+          ) : null}
           {lookupStatus.canSave ? (
             <button
               type="button"

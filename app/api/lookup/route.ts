@@ -63,6 +63,21 @@ async function markUserWordLearning(userId: string | null, wordId: number) {
   return true;
 }
 
+/** 该词是否已在当前用户的生词本（user_word 存在该行）。 */
+async function isInNotebook(userId: string | null, wordId: number): Promise<boolean> {
+  if (!userId) {
+    return false;
+  }
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from('user_word')
+    .select('word_id')
+    .eq('user_id', userId)
+    .eq('word_id', wordId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 async function createFallbackWord(candidates: string[]) {
   const fallback = getFallbackGloss(candidates);
   if (!fallback) {
@@ -140,7 +155,10 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await getRequestUser(request);
-  const saved = save ? await markUserWordLearning(user?.id ?? null, matchedWord.id) : false;
+  // save=true：写入并返回 true；save=false：返回该词是否已在生词本。
+  const saved = save
+    ? await markUserWordLearning(user?.id ?? null, matchedWord.id)
+    : await isInNotebook(user?.id ?? null, matchedWord.id);
   const phoneticUs = await getUsPhonetic([...candidates, matchedWord.lemma]);
 
   return NextResponse.json({
