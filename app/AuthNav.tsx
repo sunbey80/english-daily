@@ -1,13 +1,22 @@
 'use client';
 
 import type { Session } from '@supabase/supabase-js';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { createBrowserClient } from '@/lib/supabase';
 
+const NAV_ITEMS: { href: string; label: string; isActive: (p: string) => boolean }[] = [
+  { href: '/today', label: '今日', isActive: (p) => p === '/today' },
+  { href: '/chapters', label: '篇章', isActive: (p) => p === '/chapters' || p.startsWith('/chapters/') },
+  { href: '/notebook', label: '生词本', isActive: (p) => p === '/notebook' },
+];
+
 export function AuthNav() {
   const supabase = useMemo(() => createBrowserClient(), []);
   const [session, setSession] = useState<Session | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     let active = true;
@@ -60,24 +69,27 @@ export function AuthNav() {
           flexShrink: 0,
         }}
       >
-        <a
-          href="/today"
-          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
-        >
-          今日
-        </a>
-        <a
-          href="/chapters"
-          style={{ color: '#f7efe4', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
-        >
-          篇章
-        </a>
-        <a
-          href="/notebook"
-          style={{ color: '#64d2c8', textDecoration: 'none', padding: '7px 9px', whiteSpace: 'nowrap' }}
-        >
-          生词本
-        </a>
+        {NAV_ITEMS.map((item) => {
+          const active = item.isActive(pathname);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                textDecoration: 'none',
+                padding: '7px 11px',
+                borderRadius: 999,
+                whiteSpace: 'nowrap',
+                background: active ? '#33292f' : 'transparent',
+                color: active ? '#f7efe4' : '#9b8d83',
+                fontWeight: active ? 600 : 400,
+              }}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
       {session ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
