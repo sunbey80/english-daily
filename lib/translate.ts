@@ -1,0 +1,88 @@
+/**
+ * 章节中文翻译 + 目标词释义生成（生成管线落库前调用，结果存数据库）。
+ * 经 OpenRouter（OpenAI 兼容）调用 LLM。仅服务端/脚本使用。
+ */
+import OpenAI from 'openai';
+
+export interface TranslationUnit {
+  en: string;
+  zh: string;
+  paragraph: number;
+}
+
+function client() {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
+  return new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1' });
+}
+
+const MODEL = process.env.OPENROUTER_MODEL ?? 'anthropic/claude-sonnet-4.6';
+
+function extractJson(text: string, open: '[' | '{'): string {
+  const close = open === '[' ? ']' : '}';
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`LLM 返回无法解析为 JSON：${text.slice(0, 120)}`);
+  }
+  return text.slice(start, end + 1);
+}
+
+/**
+ * 把整章英文正文做"逐句"中英对照，返回 TranslationUnit[]。
+ * 段落以空行分隔，paragraph 从 0 递增；便条行（*...— R*）整条作为一句。
+ */
+export async function translateChapter(body: string): Promise<TranslationUnit[]> {
+  const prompt = `把下面的英文连载小说章节做"逐句"中英对照，用于分级阅读。要求：
+- 按空行分段，paragraph 从 0 开始编号，每多一个段落 +1。
+- 每个句子单独一条；保留英文原句与标点。
+- 便条行（以 * 包裹、通常以 — R 署名）整条作为一句：en 保留两侧星号，zh 用中文引号「“」「”」包裹、署名写作"——R"。
+- zh 为自然流畅的简体中文，贴合语气，不要逐字硬译。
+- 只输出 JSON 数组，每项形如 {"paragraph": 0, "en": "...", "zh": "..."}，不要任何额外文字或代码围栏。
+
+章节正文：
+${body}`;
+
+  const res = await client().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.3,
+  });
+  const text = res.choices[0]?.message?.content ?? '';
+  const parsed = JSON.parse(extractJson(text, '[')) as unknown;
+  if (!Array.isArray(parsed)) throw new Error('翻译结果不是数组');
+  return parsed
+    .filter(
+      (u): u is TranslationUnit =>
+        u != null &&
+        typeof u === 'object' &&
+        typeof (u as TranslationUnit).en === 'string' &&
+        typeof (u as TranslationUnit).zh === 'string' &&
+        typeof (u as TranslationUnit).paragraph === 'number',
+    )
+    .map((u) => ({ en: u.en, zh: u.zh, paragraph: u.paragraph }));
+}
+
+/**
+ * 为目标词生成简洁中文释义（词典风格：词性缩写 + 释义）。
+ * 返回 { lemma: zh_gloss }。
+ */
+export async function glossWords(words: string[]): Promise<Record<string, string>> {
+  if (words.length === 0) return {};
+  const prompt = `给下面英文单词各写一条简洁的中文词典释义，格式为"词性缩写 + 释义"，例如 "adj. 布满灰尘的"、"n./v. 闪烁；摇曳"、"n. 阁楼"。
+只输出 JSON 对象，键为单词、值为释义，不要任何额外文字或代码围栏。
+单词：${words.join(', ')}`;
+
+  const res = await client().chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.2,
+  });
+  const text = res.choices[0]?.message?.content ?? '';
+  const obj = JSON.parse(extractJson(text, '{')) as Record<string, unknown>;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string') out[k.toLowerCase()] = v;
+  }
+  return out;
+}

@@ -9,6 +9,7 @@
 import { loadCet4Lemmas } from '../lib/vocab';
 import { generateChapter } from '../lib/generate';
 import { createServiceClient } from '../lib/supabase';
+import { translateChapter, glossWords, type TranslationUnit } from '../lib/translate';
 
 const SAVE = process.argv.includes('--save');
 const STORY_TITLE = 'The Bookshop by the Tide';
@@ -97,7 +98,16 @@ async function main() {
     console.log('\n覆盖率不达标或目标词暴露不足，不落库。');
     return;
   }
-  await persist(storyId, nextSeq, result.body, cov.targetCounts);
+
+  // 落库前：生成逐句中文翻译 + 目标词中文释义（存进数据库）。
+  console.log('\n生成逐句中文翻译……');
+  const translation = await translateChapter(result.body);
+  console.log(`  得到 ${translation.length} 条逐句对照`);
+  console.log('生成目标词中文释义……');
+  const glosses = await glossWords(TARGET_WORDS);
+  console.log('  ', Object.entries(glosses).map(([k, v]) => `${k}=${v}`).join('  '));
+
+  await persist(storyId, nextSeq, result.body, cov.targetCounts, translation, glosses);
 }
 
 async function persist(
@@ -105,6 +115,8 @@ async function persist(
   seq: number,
   body: string,
   targetCounts: Array<{ lemma: string; count: number }>,
+  translation: TranslationUnit[],
+  glosses: Record<string, string>,
 ) {
   const supabase = createServiceClient();
 
@@ -120,9 +132,19 @@ async function persist(
     return;
   }
 
-  // publish_at = 当前时间（立即作为"今日章节"可见）
-  const publishAt = new Date().toISOString();
+  // 1. 目标词入 word 表（带中文释义，供点词查询）。
+  const wordRows = TARGET_WORDS.filter((w) => glosses[w.toLowerCase()]).map((w) => ({
+    lemma: w.toLowerCase(),
+    zh_gloss: glosses[w.toLowerCase()],
+    in_cet4: false,
+  }));
+  if (wordRows.length) {
+    const { error: wErr } = await supabase.from('word').upsert(wordRows, { onConflict: 'lemma' });
+    if (wErr) throw wErr;
+    console.log(`\n已写入 ${wordRows.length} 个目标词到 word 表`);
+  }
 
+  // 2. 章节落库（含逐句翻译）。publish_at = 现在，立即作为"今日章节"可见。
   const { data: inserted, error } = await supabase
     .from('chapter')
     .insert({
@@ -131,12 +153,13 @@ async function persist(
       user_id: null,
       body,
       target_words: targetCounts,
-      publish_at: publishAt,
+      translation,
+      publish_at: new Date().toISOString(),
     })
     .select('id')
     .single();
   if (error) throw error;
-  console.log(`\n✅ 已落库：story.id=${storyId}，chapter.id=${inserted.id}（第 ${seq} 节通用版）`);
+  console.log(`✅ 已落库：story.id=${storyId}，chapter.id=${inserted.id}（第 ${seq} 节通用版，含 ${translation.length} 条翻译）`);
 }
 
 main().catch((e) => {

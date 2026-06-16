@@ -66,6 +66,7 @@ create table if not exists public.chapter (
   user_id      uuid references public.profile(id) on delete cascade, -- NULL=通用版
   body         text not null,                 -- 正文
   target_words jsonb,                          -- [{lemma, count}]
+  translation  jsonb,                          -- 逐句中文对照 [{en, zh, paragraph}]
   publish_at   timestamptz,
   unique (story_id, seq, user_id)
 );

@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase';
-import { getTranslationUnits, type TranslationUnit } from '@/lib/chapter-translation';
+import type { TranslationUnit } from '@/lib/translate';
 
 export type TargetWord = {
   lemma: string;
@@ -19,6 +19,7 @@ type ChapterRow = {
   seq: number;
   body: string;
   target_words: unknown;
+  translation: unknown;
 };
 
 function normalizeTargetWords(value: unknown): TargetWord[] {
@@ -39,25 +40,44 @@ function normalizeTargetWords(value: unknown): TargetWord[] {
     .map((item) => ({ lemma: item.lemma, count: item.count }));
 }
 
+/** 章节中文逐句对照存于 chapter.translation（jsonb）。这里做形状校验。 */
+function normalizeTranslation(value: unknown): TranslationUnit[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (item): item is TranslationUnit =>
+        typeof item === 'object' &&
+        item !== null &&
+        'en' in item &&
+        'zh' in item &&
+        'paragraph' in item &&
+        typeof item.en === 'string' &&
+        typeof item.zh === 'string' &&
+        typeof item.paragraph === 'number',
+    )
+    .map((item) => ({ en: item.en, zh: item.zh, paragraph: item.paragraph }));
+}
+
 function toTodayChapter(row: ChapterRow): TodayChapter {
-  const chapter = {
+  return {
     id: row.id,
     seq: row.seq,
     body: row.body,
     target_words: normalizeTargetWords(row.target_words),
-  };
-
-  return {
-    ...chapter,
-    translation_units: getTranslationUnits(chapter),
+    translation_units: normalizeTranslation(row.translation),
   };
 }
+
+const CHAPTER_COLUMNS = 'id, seq, body, target_words, translation';
 
 async function getLatestPublishedGenericChapter(nowIso: string) {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('chapter')
-    .select('id, seq, body, target_words')
+    .select(CHAPTER_COLUMNS)
     .is('user_id', null)
     .lte('publish_at', nowIso)
     .order('seq', { ascending: false })
@@ -75,7 +95,7 @@ async function getLatestPublishedUserChapter(userId: string, nowIso: string) {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('chapter')
-    .select('id, seq, body, target_words')
+    .select(CHAPTER_COLUMNS)
     .eq('user_id', userId)
     .lte('publish_at', nowIso)
     .order('seq', { ascending: false })
