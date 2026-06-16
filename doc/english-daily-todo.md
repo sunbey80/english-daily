@@ -3,7 +3,7 @@
 > 配合 `english-daily-技术方案.md`。一项一项做，完成打勾。
 > 状态：✅ 完成 · 🚧 进行中 · ⬜ 待办
 
-最近更新：2026-06-12
+最近更新：2026-06-16
 
 ---
 
@@ -69,6 +69,16 @@
 - [ ] `workers/cron.ts` 接生成管线，每日通用版预生成
 - [ ] publish_at 调度（06:00 生成 / 08:00 发布）
 - [ ] （第二期）公众号 / 邮件推送
+
+## 阶段 8 · 部署上线（2026-06-16 完成）
+
+- [x] OpenNext + GitHub Actions 自动部署到 Cloudflare Workers（Linux CI 构建，绕开 Windows 构建崩溃）
+- [x] 修部署链路 6 处坑：next build 收集失败 / NEXT_PUBLIC 内联 / esbuild OOM（移除 wink-lexicon）/ 密钥上传顺序 / 静态访问内联 等
+- [x] `/api/lookup` 改用轻量 `lib/lookup-lemma`（去 wink，避免 13MB lexicon 进 Worker bundle）
+- [x] 绑定自定义域：**tutuplay.cn** + www.tutuplay.cn 指向 Worker（删除冲突的 Pages 项目）
+- [x] 目标词写入 `word` 表（含 zh_gloss + 美式音标，Codex 处理，ch1 的 dusty/crooked/attic/murmur/scribble）
+- [ ] 安全收尾：吊销对话中暴露的 Cloudflare token，重建并更新 GitHub `CLOUDFLARE_API_TOKEN`
+- [ ] 每新增一章，回填其目标词到 `word` 表 + 补该章中文逐句对照（`chapter-translation.ts`）
 
 ## 第二阶段 · 加深护城河
 

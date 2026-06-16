@@ -209,9 +209,58 @@ const CHAPTER_ONE_TRANSLATION: TranslationUnit[] = [
   },
 ];
 
+const CHAPTER_TWO_TRANSLATION: TranslationUnit[] = [
+  { paragraph: 0, en: 'The next morning, Mia arrived early.', zh: '第二天早上，米娅很早就到了。' },
+  { paragraph: 0, en: 'The shop was quiet and cold.', zh: '店里安静又寒冷。' },
+  { paragraph: 0, en: 'She could hear her own steps on the old floor.', zh: '她能听见自己踩在旧地板上的脚步声。' },
+  { paragraph: 1, en: '*Creak. Creak.*', zh: '“嘎吱。嘎吱。”' },
+  { paragraph: 2, en: 'The wooden floor made a sound with every step.', zh: '木地板每走一步都会作响。' },
+  { paragraph: 2, en: 'She stopped near the tall shelf by the window.', zh: '她在窗边那排高书架旁停下。' },
+  { paragraph: 2, en: 'A thin cobweb stretched across the corner.', zh: '一张细细的蜘蛛网在角落里横拉着。' },
+  { paragraph: 2, en: 'It moved a little in the cold air.', zh: '它在冷空气中微微晃动。' },
+  { paragraph: 3, en: 'Mia had not stopped thinking about the notes.', zh: '米娅一直没停止想那些便条。' },
+  { paragraph: 3, en: 'She pulled out a small book from the low shelf.', zh: '她从矮书架上抽出一本小书。' },
+  { paragraph: 3, en: 'The cover was faded — once blue, now a pale, tired color.', zh: '封面已经褪色——曾经是蓝色，如今是一种暗淡、疲惫的颜色。' },
+  { paragraph: 3, en: 'She opened it slowly.', zh: '她慢慢翻开它。' },
+  { paragraph: 4, en: 'A note fell out.', zh: '一张便条掉了出来。' },
+  { paragraph: 4, en: 'Same small writing.', zh: '还是那样小小的字迹。' },
+  { paragraph: 4, en: 'Same careful hand.', zh: '还是那样工整的笔迹。' },
+  { paragraph: 5, en: '*I kept what you gave me close to my heart. The locket. Always. — R*', zh: '“我把你给我的东西一直贴身珍藏。那只小金盒。永远。——R”' },
+  { paragraph: 6, en: 'Mia read the words twice.', zh: '米娅把这些字读了两遍。' },
+  { paragraph: 6, en: 'A locket.', zh: '一只小金盒。' },
+  { paragraph: 6, en: 'So R had kept something — something small, something worn around the neck.', zh: '这么说，R 一直留着一样东西——一样小小的、戴在脖子上的东西。' },
+  { paragraph: 6, en: 'A gift, maybe.', zh: '也许是一份礼物。' },
+  { paragraph: 6, en: 'From someone dear.', zh: '来自某个珍视的人。' },
+  { paragraph: 7, en: 'She looked around the shop.', zh: '她环顾着店里。' },
+  { paragraph: 7, en: 'Another cobweb floated near the top shelf.', zh: '顶层书架附近又有一张蜘蛛网在飘。' },
+  { paragraph: 7, en: 'The morning light came in weak and low.', zh: '晨光透进来，微弱而低沉。' },
+  { paragraph: 7, en: 'A small lamp in the corner began to flicker.', zh: '角落里一盏小灯开始闪烁。' },
+  { paragraph: 7, en: 'Then it went steady again.', zh: '然后它又稳定了下来。' },
+  { paragraph: 8, en: 'Mia moved to the next shelf.', zh: '米娅走到下一排书架。' },
+  { paragraph: 8, en: 'She pulled out a thick, faded book.', zh: '她抽出一本厚厚的、褪了色的书。' },
+  { paragraph: 8, en: 'The pages were yellow and soft.', zh: '书页又黄又软。' },
+  { paragraph: 8, en: 'Near the middle, she found another note.', zh: '在靠近中间的地方，她又发现了一张便条。' },
+  { paragraph: 9, en: '*If you ever come back, look for the locket. It will tell you everything. — R*', zh: '“如果你有一天回来，去找那只小金盒。它会把一切都告诉你。——R”' },
+  { paragraph: 10, en: 'Mia held the note in both hands.', zh: '米娅用双手捧着便条。' },
+  { paragraph: 10, en: 'The lamp began to flicker again, just for a second.', zh: '那盏灯又闪了一下，只有一秒。' },
+  { paragraph: 10, en: 'The floor let out a long creak as she shifted her weight.', zh: '她挪动身体时，地板发出一声长长的嘎吱声。' },
+  { paragraph: 11, en: 'She looked up at the ceiling.', zh: '她抬头望向天花板。' },
+  { paragraph: 11, en: 'There was a small door above the back stairs — a door she had not noticed before.', zh: '后楼梯上方有一扇小门——一扇她之前没注意到的门。' },
+  { paragraph: 11, en: 'It was old and dark.', zh: '它又旧又暗。' },
+  { paragraph: 11, en: 'A thin cobweb crossed its edge.', zh: '一张细蜘蛛网横在它的边缘。' },
+  { paragraph: 12, en: 'She had not seen Mrs. Lin go near it.', zh: '她没见过林太太靠近过它。' },
+  { paragraph: 12, en: 'Not once.', zh: '一次也没有。' },
+  { paragraph: 13, en: 'But someone had been up there.', zh: '但有人上去过那里。' },
+  { paragraph: 13, en: 'She was sure of it now.', zh: '现在她确信这一点。' },
+];
+
 export function getTranslationUnits(chapter: Pick<TodayChapter, 'id'>): TranslationUnit[] {
   if (chapter.id === 1) {
     return CHAPTER_ONE_TRANSLATION;
+  }
+
+  if (chapter.id === 2) {
+    return CHAPTER_TWO_TRANSLATION;
   }
 
   return [];
