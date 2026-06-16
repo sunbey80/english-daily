@@ -28,6 +28,25 @@ function extractJson(text: string, open: '[' | '{'): string {
   return text.slice(start, end + 1);
 }
 
+/** 调 LLM 并解析 JSON；解析失败自动重试一次（LLM 偶尔吐非法 JSON）。 */
+async function chatJson<T>(prompt: string, open: '[' | '{', temperature: number): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await client().chat.completions.create({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature,
+    });
+    const text = res.choices[0]?.message?.content ?? '';
+    try {
+      return JSON.parse(extractJson(text, open)) as T;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error('chatJson 解析失败');
+}
+
 /**
  * 把整章英文正文做"逐句"中英对照，返回 TranslationUnit[]。
  * 段落以空行分隔，paragraph 从 0 递增；便条行（*...— R*）整条作为一句。
@@ -38,18 +57,13 @@ export async function translateChapter(body: string): Promise<TranslationUnit[]>
 - 每个句子单独一条；保留英文原句与标点。
 - 便条行（以 * 包裹、通常以 — R 署名）整条作为一句：en 保留两侧星号，zh 用中文引号「“」「”」包裹、署名写作"——R"。
 - zh 为自然流畅的简体中文，贴合语气，不要逐字硬译。
-- 只输出 JSON 数组，每项形如 {"paragraph": 0, "en": "...", "zh": "..."}，不要任何额外文字或代码围栏。
+- 中文里一律用中文标点（，。；：？！“”），不要在字符串里出现未转义的英文半角双引号。
+- 只输出**合法 JSON 数组**，每项形如 {"paragraph": 0, "en": "...", "zh": "..."}，不要任何额外文字、注释或代码围栏。
 
 章节正文：
 ${body}`;
 
-  const res = await client().chat.completions.create({
-    model: MODEL,
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3,
-  });
-  const text = res.choices[0]?.message?.content ?? '';
-  const parsed = JSON.parse(extractJson(text, '[')) as unknown;
+  const parsed = await chatJson<unknown>(prompt, '[', 0.2);
   if (!Array.isArray(parsed)) throw new Error('翻译结果不是数组');
   return parsed
     .filter(
@@ -69,17 +83,12 @@ ${body}`;
  */
 export async function glossWords(words: string[]): Promise<Record<string, string>> {
   if (words.length === 0) return {};
-  const prompt = `给下面英文单词各写一条简洁的中文词典释义，格式为"词性缩写 + 释义"，例如 "adj. 布满灰尘的"、"n./v. 闪烁；摇曳"、"n. 阁楼"。
-只输出 JSON 对象，键为单词、值为释义，不要任何额外文字或代码围栏。
+  const prompt = `给下面英文单词各写一条简洁的中文词典释义，格式为"词性缩写 + 释义"，例如 adj. 布满灰尘的、n./v. 闪烁；摇曳、n. 阁楼。
+释义里用中文标点，不要出现未转义的英文半角双引号。
+只输出**合法 JSON 对象**，键为单词、值为释义，不要任何额外文字或代码围栏。
 单词：${words.join(', ')}`;
 
-  const res = await client().chat.completions.create({
-    model: MODEL,
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
-  });
-  const text = res.choices[0]?.message?.content ?? '';
-  const obj = JSON.parse(extractJson(text, '{')) as Record<string, unknown>;
+  const obj = await chatJson<Record<string, unknown>>(prompt, '{', 0.2);
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (typeof v === 'string') out[k.toLowerCase()] = v;

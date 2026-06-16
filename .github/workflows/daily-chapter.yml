@@ -1,0 +1,36 @@
+name: Daily chapter generation
+
+# 每天北京时间 08:00 自动生成并发布下一章。
+# UTC 00:00 = 北京时间 08:00。也可在 Actions 页手动触发。
+# 注：GitHub 定时任务按 UTC，且偶有数分钟延迟（高峰期），属正常。
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+# 公开值（非密钥）直接写在这里
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://kbtycoqitreovqjdidnr.supabase.co
+  OPENROUTER_MODEL: anthropic/claude-sonnet-4.6
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: 生成并发布今日章节
+        # 章节写入 Supabase（publish_at=现在），线上 /today 立即可见，无需重新部署。
+        # 目标词由 LLM 自动选取（四级之上 + 未教过）；翻译/释义自动入库。
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npx tsx scripts/generate-chapter.ts --save
