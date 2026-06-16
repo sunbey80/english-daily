@@ -76,9 +76,11 @@
 - [x] 修部署链路 6 处坑：next build 收集失败 / NEXT_PUBLIC 内联 / esbuild OOM（移除 wink-lexicon）/ 密钥上传顺序 / 静态访问内联 等
 - [x] `/api/lookup` 改用轻量 `lib/lookup-lemma`（去 wink，避免 13MB lexicon 进 Worker bundle）
 - [x] 绑定自定义域：**tutuplay.cn** + www.tutuplay.cn 指向 Worker（删除冲突的 Pages 项目）
-- [x] 目标词写入 `word` 表（含 zh_gloss + 美式音标，Codex 处理，ch1 的 dusty/crooked/attic/murmur/scribble）
+- [x] 目标词写入 `word` 表（含 zh_gloss；音标由查词代码生成，不存表）
+- [x] 第 2 章生成上线（creak/faded/cobweb/flicker/locket），目标词已入库
+- [x] 章节逐句中文对照改为 **DB 存储**（`chapter.translation` jsonb），移除硬编码 `chapter-translation.ts`
+- [x] 生成管线落库时**自动**：LLM 逐句翻译入 `chapter.translation` + 目标词释义入 `word` 表（`lib/translate.ts`）
 - [ ] 安全收尾：吊销对话中暴露的 Cloudflare token，重建并更新 GitHub `CLOUDFLARE_API_TOKEN`
-- [ ] 每新增一章，回填其目标词到 `word` 表 + 补该章中文逐句对照（`chapter-translation.ts`）
 
 ## 第二阶段 · 加深护城河
 
