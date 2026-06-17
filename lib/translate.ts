@@ -103,8 +103,8 @@ export async function glossWords(words: string[]): Promise<Record<string, string
 export async function phoneticizeWords(words: string[]): Promise<Record<string, string>> {
   if (words.length === 0) return {};
   const prompt = `给下面英文单词各写一个**美式音标**（American English IPA），要求：
-- 采用词典常规写法（如朗文/韦氏美音风格），形如 /ˈtɑːrnɪʃt/、/ˈmɜːrmər/、/ˈskrɪbəl/；
-- 用 r 表示卷舌音（不要用 ɹ），长元音保留长音符 ː；
+- 采用词典常规写法（如朗文/韦氏美音风格），形如 /ˈtɑːrnɪʃt/、/ˈmɜːrmər/、/ˈskrɪbəl/、/ɡet/；
+- 用 r 表示卷舌音（不要用 ɹ）；DRESS 元音用 e（不要用 ɛ），如 get 写作 /ɡet/；长元音保留长音符 ː；
 - 整个音标用一对斜线 / / 包裹。
 只输出**合法 JSON 对象**，键为单词、值为音标字符串，不要任何额外文字或代码围栏。
 单词：${words.join(', ')}`;
