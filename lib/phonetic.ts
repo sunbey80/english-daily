@@ -15,7 +15,8 @@ type DictionaryEntry = {
 };
 
 function normalizePhonetic(text: string) {
-  const trimmed = text.trim();
+  // 第三方接口返回窄式 IPA，统一归一为词典写法（与库里风格一致）。
+  const trimmed = text.trim().replace(/ɹ/g, 'r').replace(/ɛ/g, 'e');
   if (!trimmed) {
     return null;
   }
