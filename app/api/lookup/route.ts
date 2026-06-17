@@ -6,7 +6,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getRequestUser } from '@/lib/auth';
-import { getFallbackGloss } from '@/lib/lookup-gloss';
+import { defineWord } from '@/lib/llm-define';
 import { lookupCandidates } from '@/lib/lookup-lemma';
 import { getUsPhonetic } from '@/lib/phonetic';
 import { createServiceClient } from '@/lib/supabase';
@@ -79,9 +79,14 @@ async function isInNotebook(userId: string | null, wordId: number): Promise<bool
   return Boolean(data);
 }
 
+// 库里没有的词：用 LLM 现生成释义+音标，写入 word 表缓存后返回。
 async function createFallbackWord(candidates: string[]) {
-  const fallback = getFallbackGloss(candidates);
-  if (!fallback) {
+  const target = candidates[0]; // 点击词的小写原形
+  if (!target) {
+    return null;
+  }
+  const def = await defineWord(target);
+  if (!def) {
     return null;
   }
 
@@ -90,8 +95,9 @@ async function createFallbackWord(candidates: string[]) {
     .from('word')
     .upsert(
       {
-        lemma: fallback.lemma,
-        zh_gloss: fallback.zh_gloss,
+        lemma: target,
+        zh_gloss: def.zh_gloss,
+        phonetic_us: def.phonetic_us,
       },
       { onConflict: 'lemma', ignoreDuplicates: false },
     )

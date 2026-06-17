@@ -35,6 +35,18 @@ const IRREGULAR: Record<string, string> = {
   had: 'have', has: 'have', did: 'do', does: 'do',
   better: 'good', best: 'good', worse: 'bad', worst: 'bad',
   more: 'much', most: 'much', less: 'little', least: 'little', further: 'far', farther: 'far',
+  // 更多常见不规则动词过去式/分词 → 原形
+  bent: 'bend', lent: 'lend', dealt: 'deal', knelt: 'kneel',
+  slept: 'sleep', wept: 'weep', crept: 'creep', swept: 'sweep', leapt: 'leap',
+  bound: 'bind', ground: 'grind', wound: 'wind', fed: 'feed', bled: 'bleed',
+  fled: 'flee', sped: 'speed', paid: 'pay', laid: 'lay', shot: 'shoot',
+  hung: 'hang', swung: 'swing', stuck: 'stick', struck: 'strike', dug: 'dig',
+  spun: 'spin', clung: 'cling', stung: 'sting', hid: 'hide', hidden: 'hide',
+  slid: 'slide', shone: 'shine', shook: 'shake', shaken: 'shake', woke: 'wake',
+  woken: 'wake', bore: 'bear', borne: 'bear', bit: 'bite', bitten: 'bite',
+  sank: 'sink', sunk: 'sink', shrank: 'shrink', shrunk: 'shrink',
+  sprang: 'spring', sprung: 'spring',
+  lit: 'light', sought: 'seek', fought: 'fight',
 };
 
 const WORD_RE = /^[a-z]+(?:-[a-z]+)*$/;
