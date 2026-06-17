@@ -17,6 +17,7 @@ type LookupWord = {
   id: number;
   lemma: string;
   zh_gloss: string | null;
+  phonetic_us: string | null;
 };
 
 // 注：单词查询用轻量的 lookupCandidates（无 wink 依赖），
@@ -94,7 +95,7 @@ async function createFallbackWord(candidates: string[]) {
       },
       { onConflict: 'lemma', ignoreDuplicates: false },
     )
-    .select('id, lemma, zh_gloss')
+    .select('id, lemma, zh_gloss, phonetic_us')
     .single<LookupWord>();
 
   if (error) {
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('word')
-    .select('id, lemma, zh_gloss')
+    .select('id, lemma, zh_gloss, phonetic_us')
     .in('lemma', candidates)
     .returns<LookupWord[]>();
 
@@ -159,7 +160,9 @@ export async function POST(request: NextRequest) {
   const saved = save
     ? await markUserWordLearning(user?.id ?? null, matchedWord.id)
     : await isInNotebook(user?.id ?? null, matchedWord.id);
-  const phoneticUs = await getUsPhonetic([...candidates, matchedWord.lemma]);
+  // 优先用库里存的美式音标（LLM 生成的词典风格）；缺失才回退第三方接口。
+  const phoneticUs =
+    matchedWord.phonetic_us ?? (await getUsPhonetic([...candidates, matchedWord.lemma]));
 
   return NextResponse.json({
     word,

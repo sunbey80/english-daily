@@ -23,7 +23,8 @@ create table if not exists public.word (
   in_cet6     boolean not null default false,
   in_kaoyan   boolean not null default false,
   in_ielts    boolean not null default false,
-  zh_gloss    text                            -- 中文释义缓存
+  zh_gloss    text,                           -- 中文释义缓存
+  phonetic_us text                            -- 美式音标（LLM 生成，词典风格，如 /ˈtɑːrnɪʃt/）
 );
 
 -- =========================================================

@@ -95,3 +95,24 @@ export async function glossWords(words: string[]): Promise<Record<string, string
   }
   return out;
 }
+
+/**
+ * 为单词生成美式音标（IPA，词典常规写法）。返回 { lemma: '/.../'}。
+ * 例：tarnished → /ˈtɑːrnɪʃt/（用 r 不用 ɹ，长音用 ː，前后加斜线）。
+ */
+export async function phoneticizeWords(words: string[]): Promise<Record<string, string>> {
+  if (words.length === 0) return {};
+  const prompt = `给下面英文单词各写一个**美式音标**（American English IPA），要求：
+- 采用词典常规写法（如朗文/韦氏美音风格），形如 /ˈtɑːrnɪʃt/、/ˈmɜːrmər/、/ˈskrɪbəl/；
+- 用 r 表示卷舌音（不要用 ɹ），长元音保留长音符 ː；
+- 整个音标用一对斜线 / / 包裹。
+只输出**合法 JSON 对象**，键为单词、值为音标字符串，不要任何额外文字或代码围栏。
+单词：${words.join(', ')}`;
+
+  const obj = await chatJson<Record<string, unknown>>(prompt, '{', 0.2);
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string' && v.trim()) out[k.toLowerCase()] = v.trim();
+  }
+  return out;
+}

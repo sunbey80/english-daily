@@ -12,7 +12,7 @@
 import { loadCet4Lemmas } from '../lib/vocab';
 import { generateChapter } from '../lib/generate';
 import { createServiceClient } from '../lib/supabase';
-import { translateChapter, glossWords, type TranslationUnit } from '../lib/translate';
+import { translateChapter, glossWords, phoneticizeWords, type TranslationUnit } from '../lib/translate';
 import { selectTargetWords } from '../lib/target-words';
 
 const SAVE = process.argv.includes('--save');
@@ -142,7 +142,16 @@ async function main() {
     console.warn('  ⚠ 释义生成失败（目标词仍入表，释义留空）：', (e as Error).message);
   }
 
-  await persist(storyId, nextSeq, result.body, cov.targetCounts, translation, glosses, targetWords);
+  console.log('生成目标词美式音标……');
+  let phonetics: Record<string, string> = {};
+  try {
+    phonetics = await phoneticizeWords(targetWords);
+    console.log('  ', Object.entries(phonetics).map(([k, v]) => `${k}=${v}`).join('  '));
+  } catch (e) {
+    console.warn('  ⚠ 音标生成失败（留空，可后补）：', (e as Error).message);
+  }
+
+  await persist(storyId, nextSeq, result.body, cov.targetCounts, translation, glosses, phonetics, targetWords);
 }
 
 async function persist(
@@ -152,6 +161,7 @@ async function persist(
   targetCounts: Array<{ lemma: string; count: number }>,
   translation: TranslationUnit[],
   glosses: Record<string, string>,
+  phonetics: Record<string, string>,
   targetWords: string[],
 ) {
   const supabase = createServiceClient();
@@ -168,10 +178,11 @@ async function persist(
     return;
   }
 
-  // 1. 目标词入 word 表（供点词查询）。释义生成失败时仍入表（zh_gloss 留空，可后补）。
+  // 1. 目标词入 word 表（供点词查询）。释义/音标失败时仍入表（对应字段留空，可后补）。
   const wordRows = targetWords.map((w) => ({
     lemma: w.toLowerCase(),
     zh_gloss: glosses[w.toLowerCase()] ?? null,
+    phonetic_us: phonetics[w.toLowerCase()] ?? null,
     in_cet4: false,
   }));
   if (wordRows.length) {
