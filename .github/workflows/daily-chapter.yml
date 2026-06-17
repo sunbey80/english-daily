@@ -1,11 +1,12 @@
 name: Daily chapter generation
 
-# 每天北京时间 08:00 自动生成并发布下一章。
-# UTC 00:00 = 北京时间 08:00。也可在 Actions 页手动触发。
-# 注：GitHub 定时任务按 UTC，且偶有数分钟延迟（高峰期），属正常。
+# 每天北京时间约 08:20 自动生成并发布下一章。
+# 00:20 UTC = 北京时间 08:20。也可在 Actions 页手动触发（Run workflow）。
+# 注：刻意避开整点（00:00 UTC 是 GitHub 定时任务最拥堵、最易被延迟/丢弃的时段）。
+# GitHub 定时任务为尽力而为，偶有延迟属正常；漏跑可手动触发或等次日。
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '20 0 * * *'
   workflow_dispatch:
 
 # 公开值（非密钥）直接写在这里
