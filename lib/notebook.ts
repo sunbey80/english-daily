@@ -1,5 +1,4 @@
 import { createServiceClient } from '@/lib/supabase';
-import { getUsPhonetic } from '@/lib/phonetic';
 
 export type NotebookItem = {
   word_id: number;
@@ -25,6 +24,7 @@ type WordRow = {
   id: number;
   lemma: string;
   zh_gloss: string | null;
+  phonetic_us: string | null;
 };
 
 export async function getNotebookItems(userId: string | null) {
@@ -52,7 +52,7 @@ export async function getNotebookItems(userId: string | null) {
   const wordIds = userWords.map((item) => item.word_id);
   const { data: words, error: wordsError } = await supabase
     .from('word')
-    .select('id, lemma, zh_gloss')
+    .select('id, lemma, zh_gloss, phonetic_us')
     .in('id', wordIds)
     .returns<WordRow[]>();
 
@@ -62,8 +62,8 @@ export async function getNotebookItems(userId: string | null) {
 
   const wordsById = new Map((words ?? []).map((word) => [word.id, word]));
 
-  const items = userWords
-    .map<Omit<NotebookItem, 'phonetic_us'> | null>((item) => {
+  return userWords
+    .map<NotebookItem | null>((item) => {
       const word = wordsById.get(item.word_id);
       if (!word) {
         return null;
@@ -72,6 +72,8 @@ export async function getNotebookItems(userId: string | null) {
       return {
         word_id: item.word_id,
         lemma: word.lemma,
+        // 音标直接读库（与查词弹窗一致的词典风格），不再调第三方接口。
+        phonetic_us: word.phonetic_us,
         zh_gloss: word.zh_gloss,
         state: item.state,
         exposures: item.exposures,
@@ -81,12 +83,5 @@ export async function getNotebookItems(userId: string | null) {
         source_chapter: null,
       };
     })
-    .filter((item): item is Omit<NotebookItem, 'phonetic_us'> => item !== null);
-
-  return Promise.all(
-    items.map(async (item) => ({
-      ...item,
-      phonetic_us: await getUsPhonetic([item.lemma]),
-    })),
-  );
+    .filter((item): item is NotebookItem => item !== null);
 }
