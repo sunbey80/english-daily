@@ -11,6 +11,7 @@ const NAV_ITEMS: { href: string; label: string; isActive: (p: string) => boolean
   { href: '/today', label: '今日', isActive: (p) => p === '/today' },
   { href: '/chapters', label: '篇章', isActive: (p) => p === '/chapters' || p.startsWith('/chapters/') },
   { href: '/notebook', label: '生词本', isActive: (p) => p === '/notebook' },
+  { href: '/play', label: '闯关', isActive: (p) => p === '/play' },
 ];
 
 export function AuthNav() {
