@@ -97,7 +97,10 @@ async function main() {
   console.log('═══════════════ 正文 ═══════════════\n');
   console.log(result.body);
   console.log('\n═══════════════ 校验报告 ═══════════════');
-  console.log(`通过：${result.ok ? '✅ 是' : '❌ 否'}   尝试次数：${result.attempts}`);
+  console.log(
+    `内核严格校验（每词 2–3 次）：${result.ok ? '✅ 通过' : '❌ 否'}   尝试次数：${result.attempts}` +
+      '（仅诊断，发布与否以下方「发布判定」为准）',
+  );
   console.log(`覆盖率：${(cov.coverage * 100).toFixed(2)}%  (${cov.knownTokens}/${cov.totalTokens})  阈值 98%`);
   console.log('目标词复现：', cov.targetCounts.map((t) => `${t.lemma}×${t.count}`).join('  '), '（要求 2–3）');
   console.log(
@@ -128,8 +131,14 @@ async function main() {
   const acceptable =
     overExposed.length === 0 && keptTargets.length >= MIN_KEPT_TARGETS && adjustedCoverage >= 0.98;
 
+  // 最终发布结论（放宽到 2–5 次 + 孤儿词容错后的真实判定），打印在最显眼处。
+  console.log(
+    `\n📦 发布判定（放宽 2–5 次 + 孤儿词容错）：${acceptable ? '✅ 发布' : '❌ 跳过'}` +
+      `   覆盖率 ${(adjustedCoverage * 100).toFixed(2)}%   达标目标词 ${keptTargets.length} 个`,
+  );
+
   if (!SAVE) {
-    console.log(`\n（未加 --save，仅预览未写库。可落库判定：${acceptable ? '✅ 可' : '❌ 否'}）`);
+    console.log('（未加 --save，仅预览未写库）');
     return;
   }
   if (!acceptable) {
