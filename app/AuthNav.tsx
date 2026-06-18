@@ -3,7 +3,7 @@
 import type { Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { createBrowserClient } from '@/lib/supabase';
 
@@ -17,7 +17,11 @@ const NAV_ITEMS: { href: string; label: string; isActive: (p: string) => boolean
 export function AuthNav() {
   const supabase = useMemo(() => createBrowserClient(), []);
   const [session, setSession] = useState<Session | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
+  const userName = useMemo(() => getDisplayName(session), [session]);
+  const avatarText = userName.slice(0, 1).toUpperCase();
 
   useEffect(() => {
     let active = true;
@@ -32,6 +36,7 @@ export function AuthNav() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      setMenuOpen(false);
     });
 
     return () => {
@@ -40,9 +45,29 @@ export function AuthNav() {
     };
   }, [supabase]);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [menuOpen]);
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     setSession(null);
+    setMenuOpen(false);
   }
 
   return (
@@ -93,36 +118,114 @@ export function AuthNav() {
         })}
       </div>
       {session ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span
-            title={session.user.email}
-            style={{
-              color: '#d8cabe',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              minWidth: 0,
-            }}
-          >
-            {session.user.email}
-          </span>
+        <div ref={accountMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
           <button
             type="button"
-            onClick={() => void handleSignOut()}
+            title={userName}
+            aria-label="打开账号菜单"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
             style={{
-              border: '1px solid #4a3f48',
-              borderRadius: 8,
-              background: '#211a23',
+              width: 38,
+              height: 38,
+              borderRadius: '50%',
+              border: menuOpen ? '1px solid #64d2c8' : '1px solid #4a3f48',
+              background: 'linear-gradient(135deg, #2a202b 0%, #45343b 52%, #6b4b28 100%)',
               color: '#f7efe4',
               cursor: 'pointer',
-              padding: '6px 10px',
+              display: 'grid',
+              placeItems: 'center',
               font: 'inherit',
-              flexShrink: 0,
-              whiteSpace: 'nowrap',
+              fontSize: 15,
+              fontWeight: 700,
+              boxShadow: menuOpen
+                ? '0 0 0 3px rgba(100, 210, 200, 0.14), 0 14px 34px rgba(0, 0, 0, 0.32)'
+                : '0 8px 22px rgba(0, 0, 0, 0.2)',
             }}
           >
-            退出
+            {avatarText}
           </button>
+          {menuOpen ? (
+            <div
+              role="menu"
+              aria-label="账号菜单"
+              style={{
+                position: 'absolute',
+                top: 48,
+                right: 0,
+                zIndex: 30,
+                width: 'min(260px, calc(100vw - 32px))',
+                padding: 12,
+                border: '1px solid #3a3038',
+                borderRadius: 14,
+                background: '#211a23',
+                boxShadow: '0 22px 60px rgba(0, 0, 0, 0.45)',
+                color: '#f7efe4',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'center',
+                  padding: '4px 4px 12px',
+                  borderBottom: '1px solid #33292f',
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    background: '#2e242d',
+                    color: '#64d2c8',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {avatarText}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ color: '#9b8d83', fontSize: 12, marginBottom: 2 }}>当前账号</div>
+                  <div
+                    title={userName}
+                    style={{
+                      color: '#f7efe4',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: 180,
+                    }}
+                  >
+                    {userName}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void handleSignOut()}
+                style={{
+                  width: '100%',
+                  marginTop: 10,
+                  border: '1px solid #4a3f48',
+                  borderRadius: 10,
+                  background: '#18131a',
+                  color: '#f7efe4',
+                  cursor: 'pointer',
+                  padding: '9px 12px',
+                  font: 'inherit',
+                  textAlign: 'left',
+                }}
+              >
+                退出登录
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <a href="/login" style={{ color: '#f6c453', textDecoration: 'none' }}>
@@ -131,4 +234,15 @@ export function AuthNav() {
       )}
     </nav>
   );
+}
+
+function getDisplayName(session: Session | null) {
+  const metadata = session?.user.user_metadata;
+  const name =
+    typeof metadata?.name === 'string'
+      ? metadata.name
+      : typeof metadata?.full_name === 'string'
+        ? metadata.full_name
+        : undefined;
+  return name?.trim() || session?.user.email?.split('@')[0] || session?.user.email || 'U';
 }
