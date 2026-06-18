@@ -107,19 +107,50 @@ async function main() {
   );
   console.log(`正文词数（粗估）：约 ${result.body.trim().split(/\s+/).length} 词`);
 
-  // 落库判定：覆盖率达标 + 每个目标词暴露 ≥2 次（且 ≤5 防刷）。
-  // 比 result.ok 略放宽——目标词出现 4 次属自然复现，对习得有益，不算缺陷；
-  // 真正要卡的是暴露不足(<2)与覆盖率不达标。
-  const allTargetsOk = cov.targetCounts.every((t) => t.count >= 2 && t.count <= 5);
-  const acceptable = cov.coverage >= 0.98 && allTargetsOk;
+  // 落库判定 + 「孤儿词容错」：覆盖率达标 + 目标词暴露落在 [2,5]。
+  // 比 result.ok 略放宽——目标词出现 4 次属自然复现，对习得有益，不算缺陷。
+  // 容错：个别目标词重试多次仍无法自然写入（count<2，多为 0），不应废掉整章——
+  //   丢弃这些「孤儿词」，用其余目标词落库，前提是：① 仍有 ≥3 个达标目标词；
+  //   ② 把孤儿词计为超纲后重算覆盖率仍达标。过度复现(>5)不在容错之列（仍作废）。
+  const MIN_RECUR = 2;
+  const MAX_RECUR = 5;
+  const MIN_KEPT_TARGETS = 3;
+
+  const overExposed = cov.targetCounts.filter((t) => t.count > MAX_RECUR);
+  const keptTargets = cov.targetCounts.filter((t) => t.count >= MIN_RECUR && t.count <= MAX_RECUR);
+  const droppedTargets = cov.targetCounts.filter((t) => t.count < MIN_RECUR);
+
+  // 丢词后覆盖率重算：被丢的孤儿词若出现过，其 token 由「已知」转为「超纲」。
+  const droppedAppearances = droppedTargets.reduce((s, t) => s + t.count, 0);
+  const adjustedCoverage =
+    cov.totalTokens === 0 ? 0 : (cov.knownTokens - droppedAppearances) / cov.totalTokens;
+
+  const acceptable =
+    overExposed.length === 0 && keptTargets.length >= MIN_KEPT_TARGETS && adjustedCoverage >= 0.98;
 
   if (!SAVE) {
     console.log(`\n（未加 --save，仅预览未写库。可落库判定：${acceptable ? '✅ 可' : '❌ 否'}）`);
     return;
   }
   if (!acceptable) {
-    console.log('\n覆盖率不达标或目标词暴露不足，不落库。');
+    const why =
+      overExposed.length > 0
+        ? `目标词过度复现：${overExposed.map((t) => `${t.lemma}×${t.count}`).join(' ')}`
+        : keptTargets.length < MIN_KEPT_TARGETS
+          ? `达标目标词不足 ${MIN_KEPT_TARGETS} 个（仅 ${keptTargets.length} 个）`
+          : `丢词后覆盖率 ${(adjustedCoverage * 100).toFixed(2)}% 仍不达标`;
+    console.log(`\n不落库：${why}。`);
     return;
+  }
+
+  // 落库用「保留下来的目标词」：丢掉的孤儿词不入 word 表、不计入 chapter.target_words，
+  // 避免被误标为「已教过」而污染后续自动选词。
+  const keptLemmas = keptTargets.map((t) => t.lemma);
+  if (droppedTargets.length > 0) {
+    console.log(
+      `\n⚠ 丢弃无法自然写入的目标词：${droppedTargets.map((t) => `${t.lemma}×${t.count}`).join(' ')}` +
+        `（保留 ${keptLemmas.join(', ')}，丢词后覆盖率 ${(adjustedCoverage * 100).toFixed(2)}%）`,
+    );
   }
 
   // 落库前：生成逐句中文翻译 + 目标词中文释义（存进数据库）。
@@ -136,7 +167,7 @@ async function main() {
   console.log('生成目标词中文释义……');
   let glosses: Record<string, string> = {};
   try {
-    glosses = await glossWords(targetWords);
+    glosses = await glossWords(keptLemmas);
     console.log('  ', Object.entries(glosses).map(([k, v]) => `${k}=${v}`).join('  '));
   } catch (e) {
     console.warn('  ⚠ 释义生成失败（目标词仍入表，释义留空）：', (e as Error).message);
@@ -145,13 +176,13 @@ async function main() {
   console.log('生成目标词美式音标……');
   let phonetics: Record<string, string> = {};
   try {
-    phonetics = await phoneticizeWords(targetWords);
+    phonetics = await phoneticizeWords(keptLemmas);
     console.log('  ', Object.entries(phonetics).map(([k, v]) => `${k}=${v}`).join('  '));
   } catch (e) {
     console.warn('  ⚠ 音标生成失败（留空，可后补）：', (e as Error).message);
   }
 
-  await persist(storyId, nextSeq, result.body, cov.targetCounts, translation, glosses, phonetics, targetWords);
+  await persist(storyId, nextSeq, result.body, keptTargets, translation, glosses, phonetics, keptLemmas);
 }
 
 async function persist(
